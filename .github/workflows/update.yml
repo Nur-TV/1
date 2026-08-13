@@ -1,0 +1,209 @@
+name: Update IPTV playlist
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-playlist:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Create IPTV processor
+        run: |
+          cat > build_playlist.py <<'PY'
+          import re
+          import requests
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+
+          SOURCES = [
+              "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
+              "https://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV",
+              "https://spirt007.github.io/Tvru/Rus.m3u",
+              "https://iptv.axenov.dev/so",
+              "https://loganet.vercel.app/LoganetXStrawberry.m3u",
+          ]
+
+          OUTPUT = "playlist.m3u"
+
+          # ВАЖНО:
+          # Дубли каналов НЕ удаляем.
+          # Каждый источник может содержать резервные ссылки одного и того же канала.
+
+          session = requests.Session()
+          session.headers.update({
+              "User-Agent": "Mozilla/5.0 IPTV Playlist Builder"
+          })
+
+          def download_playlist(url):
+              try:
+                  r = session.get(url, timeout=30)
+                  r.raise_for_status()
+                  return r.text
+              except Exception as e:
+                  print(f"SOURCE ERROR: {url} -> {e}")
+                  return ""
+
+          def extract_entries(text):
+              lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+              entries = []
+
+              current_info = None
+
+              for line in lines:
+                  line = line.strip()
+
+                  if not line:
+                      continue
+
+                  if line.startswith("#EXTINF:"):
+                      current_info = line
+                      continue
+
+                  if line.startswith("#"):
+                      continue
+
+                  if current_info and (
+                      line.startswith("http://")
+                      or line.startswith("https://")
+                      or line.startswith("rtmp://")
+                  ):
+                      entries.append((current_info, line))
+                      current_info = None
+
+              return entries
+
+          def is_obvious_garbage(info, url):
+              text = (info + " " + url).lower()
+
+              garbage_words = [
+                  "реклама",
+                  "advert",
+                  "поддержка проекта",
+                  "поддержать проект",
+                  "донат",
+                  "donate",
+                  "подарок",
+                  "внимание",
+                  "смотри❗",
+              ]
+
+              return any(word in text for word in garbage_words)
+
+          def check_stream(item):
+              info, url = item
+
+              try:
+                  # Проверяем, что сервер действительно отвечает.
+                  # Не удаляем повторяющиеся каналы — проверяем каждую ссылку отдельно.
+                  r = requests.get(
+                      url,
+                      headers={"User-Agent": "VLC/3.0 IPTV"},
+                      stream=True,
+                      timeout=(8, 12),
+                      allow_redirects=True
+                  )
+
+                  status = r.status_code
+
+                  if status >= 400:
+                      r.close()
+                      return False, item
+
+                  # Для обычных HTTP/HLS ссылок 200/206/301/302 после редиректа
+                  # считаем хорошим признаком.
+                  if status in (200, 206):
+                      try:
+                          next(r.iter_content(chunk_size=1024))
+                      except Exception:
+                          pass
+
+                      r.close()
+                      return True, item
+
+                  r.close()
+                  return False, item
+
+              except Exception:
+                  return False, item
+
+          print("Downloading source playlists...")
+
+          all_entries = []
+
+          for source in SOURCES:
+              text = download_playlist(source)
+
+              if text:
+                  entries = extract_entries(text)
+                  print(f"{source} -> {len(entries)} entries")
+
+                  for entry in entries:
+                      if not is_obvious_garbage(entry[0], entry[1]):
+                          all_entries.append(entry)
+
+          print(f"Total entries before checking: {len(all_entries)}")
+
+          working = []
+
+          print("Checking streams...")
+
+          with ThreadPoolExecutor(max_workers=30) as executor:
+              futures = [
+                  executor.submit(check_stream, entry)
+                  for entry in all_entries
+              ]
+
+              for i, future in enumerate(as_completed(futures), 1):
+                  ok, entry = future.result()
+
+                  if ok:
+                      working.append(entry)
+
+                  if i % 100 == 0:
+                      print(f"Checked {i}/{len(futures)}")
+
+          print(f"Working entries: {len(working)}")
+
+          with open(OUTPUT, "w", encoding="utf-8") as f:
+              f.write("#EXTM3U\n")
+
+              for info, url in working:
+                  f.write(info + "\n")
+                  f.write(url + "\n")
+
+          print(f"Saved {OUTPUT}")
+
+          PY
+
+      - name: Build playlist
+        run: python build_playlist.py
+
+      - name: Commit updated playlist
+        run: |
+          git config user.name "IPTV Bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          git add playlist.m3u
+
+          if git diff --cached --quiet; then
+            echo "Playlist has no changes."
+          else
+            git commit -m "Update IPTV playlist"
+            git push
+          fi
