@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rapidfuzz
+
       - name: Build combined lightweight EPG
         run: |
           cat > build_epg.py <<'PY'
@@ -30,32 +35,86 @@ jobs:
           import urllib.request
           import xml.etree.ElementTree as ET
           from datetime import datetime, timedelta, timezone
+          from rapidfuzz import fuzz
 
           PLAYLIST_URL = "https://raw.githubusercontent.com/Nur-TV/1/main/playlist.m3u"
 
           EPG_SOURCES = [
-              ("IPTVX LITE", "https://iptvx.one/EPG.LITE"),
-              ("IPTVX FULL", "https://iptvx.one/EPG"),
-              ("IPTVX GZ", "https://iptvx.one/epg/epg.xml.gz"),
+              ("IPTVX_LITE", "https://iptvx.one/EPG.LITE"),
               ("EDEM", "http://epg.it999.ru/edem.xml.gz"),
           ]
 
           OUTPUT = "epg.xml.gz"
 
+          # ============================================================
+          # НАСТРОЙКИ
+          # ============================================================
+
+          DAYS_BACK = 3
+          DAYS_FORWARD = 1
+
+          # Минимальный процент похожести названий.
+          # Более высокие значения защищают от ошибочных совпадений.
+          FUZZY_LIMIT = 78
+
+          # ============================================================
+          # НОРМАЛИЗАЦИЯ НАЗВАНИЙ
+          # ============================================================
+
+          REMOVE_WORDS = {
+              "hd",
+              "fhd",
+              "uhd",
+              "4k",
+              "8k",
+              "sd",
+              "hdtv",
+              "tv",
+              "телеканал",
+              "канал",
+              "channel",
+              "online",
+              "онлайн",
+              "live",
+              "лайв",
+          }
+
           def norm(text):
-              text = unicodedata.normalize("NFKC", text or "")
-              text = text.lower().replace("ё", "е")
-
-              text = re.sub(r"\([^)]*\)", " ", text)
-              text = re.sub(r"\[[^]]*\]", " ", text)
-
-              text = re.sub(
-                  r"\b(uhd|4k|fhd|hd|sd|hdtv|tv|телеканал|канал)\b",
-                  " ",
-                  text,
-                  flags=re.IGNORECASE
+              text = unicodedata.normalize(
+                  "NFKC",
+                  text or ""
               )
 
+              text = text.lower()
+              text = text.replace("ё", "е")
+
+              # Удаляем технические пометки в скобках.
+              text = re.sub(
+                  r"\([^)]*\)",
+                  " ",
+                  text
+              )
+
+              text = re.sub(
+                  r"\[[^]]*\]",
+                  " ",
+                  text
+              )
+
+              text = re.sub(
+                  r"\{[^}]*\}",
+                  " ",
+                  text
+              )
+
+              # Убираем URL.
+              text = re.sub(
+                  r"https?://\S+",
+                  " ",
+                  text
+              )
+
+              # Разделяем знаки.
               text = re.sub(
                   r"[^0-9a-zа-яё]+",
                   " ",
@@ -63,25 +122,59 @@ jobs:
                   flags=re.IGNORECASE
               )
 
-              return re.sub(r"\s+", " ", text).strip()
+              words = []
 
+              for word in text.split():
+
+                  if word in REMOVE_WORDS:
+                      continue
+
+                  words.append(word)
+
+              return " ".join(words).strip()
+
+
+          def compact_norm(text):
+              return re.sub(
+                  r"[^0-9a-zа-яё]",
+                  "",
+                  norm(text),
+                  flags=re.IGNORECASE
+              )
+
+
+          def get_attr(element, name):
+              return (
+                  element.get(name, "").strip()
+                  if element is not None
+                  else ""
+              )
+
+
+          # ============================================================
+          # ЗАГРУЗКА
+          # ============================================================
 
           def fetch(url):
-              req = urllib.request.Request(
+
+              request = urllib.request.Request(
                   url,
                   headers={
-                      "User-Agent": "Mozilla/5.0 NurTV EPG Builder"
+                      "User-Agent":
+                          "Mozilla/5.0 NurTV EPG Builder"
                   }
               )
 
               with urllib.request.urlopen(
-                  req,
+                  request,
                   timeout=180
               ) as response:
+
                   return response.read()
 
 
           def load_xml(url):
+
               raw = fetch(url)
 
               if raw[:2] == b"\x1f\x8b":
@@ -90,28 +183,37 @@ jobs:
               return ET.fromstring(raw)
 
 
+          # ============================================================
+          # ЧТЕНИЕ PLAYLIST
+          # ============================================================
+
+          print("")
           print("======================================")
-          print("NURTV EPG BUILDER")
+          print("NURTV LIGHTWEIGHT EPG")
           print("======================================")
 
           print("Downloading playlist...")
 
-          playlist_raw = fetch(
+          playlist_text = fetch(
               PLAYLIST_URL
           ).decode(
               "utf-8",
               errors="replace"
           )
 
-          playlist_channels = []
+          playlist_entries = []
 
           current_info = None
 
-          for line in playlist_raw.splitlines():
+          for line in playlist_text.splitlines():
 
               line = line.strip()
 
+              if not line:
+                  continue
+
               if line.startswith("#EXTINF:"):
+
                   current_info = line
                   continue
 
@@ -133,7 +235,7 @@ jobs:
 
                       name = name_match.group(1).strip()
 
-                      tvg_id_match = re.search(
+                      id_match = re.search(
                           r'tvg-id="([^"]*)"',
                           current_info,
                           re.IGNORECASE
@@ -146,8 +248,8 @@ jobs:
                       )
 
                       tvg_id = (
-                          tvg_id_match.group(1).strip()
-                          if tvg_id_match
+                          id_match.group(1).strip()
+                          if id_match
                           else ""
                       )
 
@@ -157,9 +259,10 @@ jobs:
                           else ""
                       )
 
-                      playlist_channels.append({
+                      playlist_entries.append({
                           "name": name,
                           "norm": norm(name),
+                          "compact": compact_norm(name),
                           "tvg_id": tvg_id,
                           "logo": logo,
                       })
@@ -168,34 +271,57 @@ jobs:
 
 
           print(
-              f"Playlist channels: "
-              f"{len(playlist_channels)}"
+              f"Playlist entries: "
+              f"{len(playlist_entries)}"
           )
 
 
           # ============================================================
-          # УДАЛЯЕМ ПОВТОРЫ ТОЛЬКО ДЛЯ EPG-СОПОСТАВЛЕНИЯ.
-          # САМ PLAYLIST НЕ МЕНЯЕМ.
+          # УНИКАЛЬНЫЕ КАНАЛЫ
+          #
+          # Сам M3U НЕ ИЗМЕНЯЕМ.
+          # Уникализация нужна только для EPG.
           # ============================================================
 
-          unique_playlist = {}
+          unique_channels = {}
 
-          for channel in playlist_channels:
+          for channel in playlist_entries:
 
-              key = (
-                  channel["tvg_id"].lower().strip()
-                  if channel["tvg_id"]
-                  else channel["norm"]
-              )
+              if channel["tvg_id"]:
 
-              if key and key not in unique_playlist:
-                  unique_playlist[key] = channel
+                  key = (
+                      "id:",
+                      channel["tvg_id"].lower()
+                  )
+
+              else:
+
+                  key = (
+                      "name:",
+                      channel["norm"]
+                  )
+
+              if key not in unique_channels:
+
+                  unique_channels[key] = channel
+
+              else:
+
+                  # Если у дубля есть логотип,
+                  # а у первого нет — сохраняем логотип.
+                  if (
+                      not unique_channels[key]["logo"]
+                      and channel["logo"]
+                  ):
+
+                      unique_channels[key]["logo"] = (
+                          channel["logo"]
+                      )
 
 
           playlist_channels = list(
-              unique_playlist.values()
+              unique_channels.values()
           )
-
 
           print(
               f"Unique playlist channels: "
@@ -204,10 +330,10 @@ jobs:
 
 
           # ============================================================
-          # ЗАГРУЖАЕМ ВСЕ 4 EPG
+          # ЗАГРУЖАЕМ EPG
           # ============================================================
 
-          sources = []
+          loaded_sources = []
 
           for source_name, source_url in EPG_SOURCES:
 
@@ -237,12 +363,12 @@ jobs:
                       f"{len(programs)} programs"
                   )
 
-                  sources.append(
-                      (
-                          source_name,
-                          root
-                      )
-                  )
+                  loaded_sources.append({
+                      "name": source_name,
+                      "root": root,
+                      "channels": channels,
+                      "programs": programs,
+                  })
 
               except Exception as error:
 
@@ -253,42 +379,26 @@ jobs:
 
 
           # ============================================================
-          # СОБИРАЕМ ВСЕ ВАРИАНТЫ EPG-КАНАЛОВ
-          #
-          # Приоритет:
-          #
-          # 1. IPTVX LITE
-          # 2. IPTVX FULL
-          # 3. IPTVX GZ
-          # 4. EDEM
-          #
-          # Но программа будет проверяться у всех источников.
+          # СОЗДАЁМ ИНДЕКСЫ EPG
           # ============================================================
 
-          epg_by_id = {}
-          epg_by_name = {}
+          all_epg_channels = []
 
+          for source_index, source in enumerate(
+              loaded_sources
+          ):
 
-          for source_index, (
-              source_name,
-              root
-          ) in enumerate(sources):
+              for channel in source["channels"]:
 
-              for channel in root.findall(
-                  "channel"
-              ):
-
-                  cid = (
-                      channel.get(
-                          "id",
-                          ""
-                      ).strip()
+                  cid = get_attr(
+                      channel,
+                      "id"
                   )
 
                   if not cid:
                       continue
 
-                  names = []
+                  display_names = []
 
                   for display in channel.findall(
                       "display-name"
@@ -299,233 +409,300 @@ jobs:
                           and display.text.strip()
                       ):
 
-                          names.append(
+                          display_names.append(
                               display.text.strip()
                           )
 
+                  if not display_names:
+                      display_names.append(cid)
+
                   normalized_names = set()
 
-                  for name in names:
+                  compact_names = set()
+
+                  for name in display_names:
 
                       n = norm(name)
+
+                      c = compact_norm(name)
 
                       if n:
                           normalized_names.add(n)
 
-                          epg_by_name.setdefault(
-                              n,
-                              []
-                          ).append(
+                      if c:
+                          compact_names.add(c)
+
+                  icon = channel.find(
+                      "icon"
+                  )
+
+                  icon_url = ""
+
+                  if icon is not None:
+
+                      icon_url = get_attr(
+                          icon,
+                          "src"
+                      )
+
+                  all_epg_channels.append({
+                      "source_index":
+                          source_index,
+                      "source_name":
+                          source["name"],
+                      "id":
+                          cid,
+                      "id_norm":
+                          norm(cid),
+                      "id_compact":
+                          compact_norm(cid),
+                      "names":
+                          normalized_names,
+                      "compact_names":
+                          compact_names,
+                      "icon":
+                          icon_url,
+                  })
+
+
+          print("")
+          print(
+              f"Total EPG channel records: "
+              f"{len(all_epg_channels)}"
+          )
+
+
+          # Быстрые индексы.
+
+          by_id = {}
+          by_name = {}
+          by_compact = {}
+
+          for item in all_epg_channels:
+
+              by_id.setdefault(
+                  item["id"].lower(),
+                  []
+              ).append(item)
+
+              for name in item["names"]:
+
+                  by_name.setdefault(
+                      name,
+                      []
+                  ).append(item)
+
+              for name in item["compact_names"]:
+
+                  by_compact.setdefault(
+                      name,
+                      []
+                  ).append(item)
+
+
+          # ============================================================
+          # ПОИСК ВСЕХ СОВПАДЕНИЙ
+          # ============================================================
+
+          def find_matches(channel):
+
+              matches = []
+              seen = set()
+
+              # --------------------------------------------------------
+              # 1. TVG-ID
+              # --------------------------------------------------------
+
+              if channel["tvg_id"]:
+
+                  key = channel[
+                      "tvg_id"
+                  ].lower()
+
+                  for item in by_id.get(
+                      key,
+                      []
+                  ):
+
+                      unique_key = (
+                          item["source_index"],
+                          item["id"]
+                      )
+
+                      if unique_key not in seen:
+
+                          seen.add(
+                              unique_key
+                          )
+
+                          matches.append(
                               (
-                                  source_index,
-                                  cid,
-                                  channel
+                                  1000,
+                                  item
                               )
                           )
 
-                  epg_by_id[
-                      cid.lower()
-                  ] = (
-                      source_index,
-                      channel,
-                      normalized_names
-                  )
-
-
-          # ============================================================
-          # ИЩЕМ ЛУЧШИЙ EPG-КАНАЛ
-          # ============================================================
-
-          def find_epg_channel(
-              playlist_channel
-          ):
-
-              tvg_id = (
-                  playlist_channel[
-                      "tvg_id"
-                  ].strip().lower()
-              )
 
               # --------------------------------------------------------
-              # 1. ТОЧНОЕ СОВПАДЕНИЕ TVG-ID
+              # 2. ТОЧНОЕ НАЗВАНИЕ
               # --------------------------------------------------------
 
-              if tvg_id:
+              for item in by_name.get(
+                  channel["norm"],
+                  []
+              ):
 
-                  direct = epg_by_id.get(
-                      tvg_id
+                  unique_key = (
+                      item["source_index"],
+                      item["id"]
                   )
 
-                  if direct:
+                  if unique_key not in seen:
 
-                      return (
-                          direct[0],
-                          direct[1],
-                          "tvg-id"
+                      seen.add(
+                          unique_key
+                      )
+
+                      matches.append(
+                          (
+                              900,
+                              item
+                          )
                       )
 
 
               # --------------------------------------------------------
-              # 2. ТОЧНОЕ НОРМАЛИЗОВАННОЕ НАЗВАНИЕ
+              # 3. КОМПАКТНОЕ НАЗВАНИЕ
               # --------------------------------------------------------
 
-              pname = playlist_channel[
-                  "norm"
-              ]
-
-              candidates = epg_by_name.get(
-                  pname,
+              for item in by_compact.get(
+                  channel["compact"],
                   []
-              )
+              ):
 
-              if candidates:
-
-                  candidates = sorted(
-                      candidates,
-                      key=lambda x: x[0]
+                  unique_key = (
+                      item["source_index"],
+                      item["id"]
                   )
 
-                  return (
-                      candidates[0][0],
-                      candidates[0][2],
-                      "exact-name"
-                  )
+                  if unique_key not in seen:
+
+                      seen.add(
+                          unique_key
+                      )
+
+                      matches.append(
+                          (
+                              850,
+                              item
+                          )
+                      )
 
 
               # --------------------------------------------------------
-              # 3. ЧАСТИЧНОЕ СОВПАДЕНИЕ
+              # 4. FUZZY
               #
-              # Используем только достаточно длинные названия.
-              # Это защищает от ошибочных совпадений типа:
-              # "Россия" -> "Россия 1".
+              # Проверяем только кандидатов,
+              # имеющих похожие первые символы/слова.
               # --------------------------------------------------------
 
-              if len(pname) >= 5:
+              if not matches:
 
-                  best = None
-                  best_score = 0
+                  target = channel["norm"]
 
-                  for epg_name, candidates in epg_by_name.items():
+                  if len(target) >= 4:
 
-                      if len(epg_name) < 5:
-                          continue
+                      target_words = set(
+                          target.split()
+                      )
 
-                      score = 0
+                      for item in all_epg_channels:
 
-                      if pname == epg_name:
-                          score = 100
+                          best_score = 0
 
-                      elif (
-                          pname in epg_name
-                          or epg_name in pname
-                      ):
+                          for candidate_name in item["names"]:
 
-                          shorter = min(
-                              len(pname),
-                              len(epg_name)
-                          )
+                              score1 = fuzz.ratio(
+                                  target,
+                                  candidate_name
+                              )
 
-                          longer = max(
-                              len(pname),
-                              len(epg_name)
-                          )
+                              score2 = fuzz.token_set_ratio(
+                                  target,
+                                  candidate_name
+                              )
 
-                          score = (
-                              shorter / longer
-                          ) * 80
+                              score = max(
+                                  score1,
+                                  score2
+                              )
 
-                      else:
+                              if score > best_score:
 
-                          p_words = set(
-                              pname.split()
-                          )
+                                  best_score = score
 
-                          e_words = set(
-                              epg_name.split()
-                          )
+                          if (
+                              best_score
+                              >= FUZZY_LIMIT
+                          ):
 
-                          common = (
-                              p_words
-                              & e_words
-                          )
+                              unique_key = (
+                                  item["source_index"],
+                                  item["id"]
+                              )
 
-                          if common:
+                              if unique_key not in seen:
 
-                              score = (
-                                  len(common)
-                                  / max(
-                                      len(
-                                          p_words
-                                      ),
-                                      len(
-                                          e_words
+                                  seen.add(
+                                      unique_key
+                                  )
+
+                                  matches.append(
+                                      (
+                                          int(
+                                              best_score
+                                          ),
+                                          item
                                       )
                                   )
-                              ) * 70
-
-                      if score > best_score:
-
-                          best_score = score
-                          best = candidates
-
-                  if (
-                      best
-                      and best_score >= 65
-                  ):
-
-                      best = sorted(
-                          best,
-                          key=lambda x: x[0]
-                      )
-
-                      return (
-                          best[0][0],
-                          best[0][2],
-                          "fuzzy"
-                      )
 
 
-              return None
-
-
-          # ============================================================
-          # СОПОСТАВЛЕНИЕ
-          # ============================================================
-
-          matched = {}
-
-          unmatched = []
-
-          for playlist_channel in playlist_channels:
-
-              result = find_epg_channel(
-                  playlist_channel
+              matches.sort(
+                  key=lambda x: (
+                      -x[0],
+                      x[1]["source_index"]
+                  )
               )
 
-              if result:
+              return matches
 
-                  source_index, epg_channel, method = result
 
-                  cid = epg_channel.get(
-                      "id",
-                      ""
-                  )
+          # ============================================================
+          # СОПОСТАВЛЯЕМ КАНАЛЫ
+          # ============================================================
 
-                  matched[
-                      playlist_channel["norm"]
-                  ] = {
-                      "playlist": playlist_channel,
-                      "source_index": source_index,
-                      "epg_channel": epg_channel,
-                      "method": method,
-                      "epg_id": cid,
-                  }
+          channel_matches = {}
+
+          matched_count = 0
+          unmatched_count = 0
+
+          for channel in playlist_channels:
+
+              matches = find_matches(
+                  channel
+              )
+
+              channel_matches[
+                  channel["norm"]
+              ] = matches
+
+              if matches:
+
+                  matched_count += 1
 
               else:
 
-                  unmatched.append(
-                      playlist_channel
-                  )
+                  unmatched_count += 1
 
 
           print("")
@@ -534,51 +711,45 @@ jobs:
           print("======================================")
 
           print(
-              f"Playlist channels: "
+              f"Playlist unique channels: "
               f"{len(playlist_channels)}"
           )
 
           print(
               f"EPG matched: "
-              f"{len(matched)}"
+              f"{matched_count}"
           )
 
           print(
               f"Without EPG: "
-              f"{len(unmatched)}"
+              f"{unmatched_count}"
           )
 
 
           # ============================================================
-          # ВЫХОДНОЙ XML
+          # СОЗДАЁМ ИТОГОВЫЙ XMLTV
           # ============================================================
 
-          out_root = ET.Element(
+          output_root = ET.Element(
               "tv",
               {
                   "generator-info-name":
-                      "NurTV lightweight combined EPG"
+                      "NurTV combined lightweight EPG"
               }
           )
 
 
-          # Старые EPG ID могут быть странными.
-          # Создаём свои стабильные ID для каждого канала.
-          output_id_by_playlist = {}
+          output_channels = {}
 
 
-          for index, item in enumerate(
-              matched.values(),
+          for number, channel in enumerate(
+              playlist_channels,
               1
           ):
 
-              playlist_channel = item[
-                  "playlist"
-              ]
-
               output_id = (
-                  playlist_channel["tvg_id"]
-                  or f"nurtv-{index}"
+                  channel["tvg_id"]
+                  or f"nurtv-{number}"
               )
 
               output_id = re.sub(
@@ -587,12 +758,8 @@ jobs:
                   output_id
               )
 
-              output_id_by_playlist[
-                  playlist_channel["norm"]
-              ] = output_id
-
               out_channel = ET.SubElement(
-                  out_root,
+                  output_root,
                   "channel",
                   {
                       "id": output_id
@@ -602,30 +769,28 @@ jobs:
               ET.SubElement(
                   out_channel,
                   "display-name"
-              ).text = playlist_channel[
+              ).text = channel[
                   "name"
               ]
 
-              logo = playlist_channel[
-                  "logo"
-              ]
+              # --------------------------------------------------------
+              # ЛОГОТИП
+              # --------------------------------------------------------
+
+              logo = channel["logo"]
 
               if not logo:
 
-                  source_channel = item[
-                      "epg_channel"
+                  matches = channel_matches[
+                      channel["norm"]
                   ]
 
-                  icon = source_channel.find(
-                      "icon"
-                  )
+                  for score, item in matches:
 
-                  if icon is not None:
+                      if item["icon"]:
 
-                      logo = icon.get(
-                          "src",
-                          ""
-                      )
+                          logo = item["icon"]
+                          break
 
               if logo:
 
@@ -637,12 +802,18 @@ jobs:
                       }
                   )
 
+              output_channels[
+                  channel["norm"]
+              ] = {
+                  "id": output_id,
+                  "matches": channel_matches[
+                      channel["norm"]
+                  ],
+              }
+
 
           # ============================================================
-          # ВРЕМЕННОЕ ОКНО
-          #
-          # 3 ДНЯ НАЗАД
-          # ДО 1 ДНЯ ВПЕРЁД
+          # ОКНО EPG
           # ============================================================
 
           now = datetime.now(
@@ -651,90 +822,60 @@ jobs:
 
           window_start = (
               now
-              - timedelta(days=3)
+              - timedelta(
+                  days=DAYS_BACK
+              )
           )
 
           window_end = (
               now
-              + timedelta(days=1)
+              + timedelta(
+                  days=DAYS_FORWARD
+              )
           )
 
 
           # ============================================================
-          # СОБИРАЕМ ПРОГРАММЫ ИЗ ВСЕХ 4 ИСТОЧНИКОВ
+          # ПРОГРАММЫ
+          #
+          # ЧИТАЕМ ВСЕ ПРОГРАММЫ ТОЛЬКО ДЛЯ НАЙДЕННЫХ EPG ID.
           # ============================================================
 
-          programs_by_output_id = {}
+          all_programmes = {}
 
-
-          for item in matched.values():
-
-              playlist_channel = item[
-                  "playlist"
-              ]
-
-              output_id = output_id_by_playlist[
-                  playlist_channel["norm"]
-              ]
-
-              programs_by_output_id[
-                  output_id
-              ] = {}
-
-
-          for source_index, (
-              source_name,
-              root
-          ) in enumerate(sources):
+          for source_index, source in enumerate(
+              loaded_sources
+          ):
 
               print(
                   f"Processing programs: "
-                  f"{source_name}"
+                  f"{source['name']}"
               )
 
-              for programme in root.findall(
-                  "programme"
-              ):
+              for programme in source[
+                  "programs"
+              ]:
 
-                  old_cid = programme.get(
-                      "channel",
-                      ""
-                  ).strip()
-
-                  if not old_cid:
-                      continue
-
-
-                  # Находим все наши каналы,
-                  # связанные с этим EPG ID.
-
-                  target_items = []
-
-                  for item in matched.values():
-
-                      if (
-                          item["epg_id"]
-                          == old_cid
-                      ):
-
-                          target_items.append(
-                              item
-                          )
-
-
-                  if not target_items:
-                      continue
-
-
-                  start_text = programme.get(
-                      "start",
-                      ""
+                  cid = get_attr(
+                      programme,
+                      "channel"
                   )
 
-                  stop_text = programme.get(
-                      "stop",
-                      ""
+                  if not cid:
+                      continue
+
+                  start_text = get_attr(
+                      programme,
+                      "start"
                   )
+
+                  stop_text = get_attr(
+                      programme,
+                      "stop"
+                  )
+
+                  if len(start_text) < 14:
+                      continue
 
                   try:
 
@@ -745,7 +886,13 @@ jobs:
                           tzinfo=timezone.utc
                       )
 
-                      if stop_text:
+                  except Exception:
+
+                      continue
+
+                  if stop_text:
+
+                      try:
 
                           stop_dt = datetime.strptime(
                               stop_text[:14],
@@ -754,16 +901,23 @@ jobs:
                               tzinfo=timezone.utc
                           )
 
-                      else:
+                      except Exception:
 
                           stop_dt = (
                               start_dt
-                              + timedelta(hours=1)
+                              + timedelta(
+                                  hours=1
+                              )
                           )
 
-                  except Exception:
+                  else:
 
-                      continue
+                      stop_dt = (
+                          start_dt
+                          + timedelta(
+                              hours=1
+                          )
+                      )
 
 
                   if (
@@ -774,77 +928,111 @@ jobs:
                       continue
 
 
-                  title = programme.find(
+                  title_element = programme.find(
                       "title"
                   )
 
                   if (
-                      title is None
-                      or not title.text
-                      or not title.text.strip()
+                      title_element is None
+                      or not title_element.text
                   ):
 
                       continue
 
+                  title = (
+                      title_element.text
+                      .strip()
+                  )
 
-                  title_text = title.text.strip()
+                  if not title:
+                      continue
 
 
-                  for item in target_items:
+                  key = (
+                      source_index,
+                      cid
+                  )
 
-                      output_id = output_id_by_playlist[
-                          item["playlist"]["norm"]
-                      ]
-
-                      key = (
+                  all_programmes.setdefault(
+                      key,
+                      []
+                  ).append(
+                      (
                           start_text,
                           stop_text,
-                          title_text
+                          title
                       )
-
-                      programs_by_output_id[
-                          output_id
-                      ].setdefault(
-                          key,
-                          (
-                              source_index,
-                              start_text,
-                              stop_text,
-                              title_text,
-                              title.get(
-                                  "lang",
-                                  ""
-                              )
-                          )
-                      )
+                  )
 
 
           # ============================================================
-          # ЗАПИСЬ ПРОГРАММ
+          # СВЯЗЫВАЕМ ПРОГРАММЫ С НАШИМИ КАНАЛАМИ
           # ============================================================
 
-          kept_programs = 0
+          total_programmes = 0
 
 
-          for output_id, programs in (
-              programs_by_output_id.items()
-          ):
+          for channel in playlist_channels:
+
+              output = output_channels[
+                  channel["norm"]
+              ]
+
+              output_id = output["id"]
+
+              matches = output["matches"]
+
+              programmes = {}
+
+              for score, item in matches:
+
+                  key = (
+                      item["source_index"],
+                      item["id"]
+                  )
+
+                  for (
+                      start_text,
+                      stop_text,
+                      title
+                  ) in all_programmes.get(
+                      key,
+                      []
+                  ):
+
+                      # Убираем дубли,
+                      # которые могут присутствовать
+                      # одновременно в нескольких источниках.
+
+                      dedupe_key = (
+                          start_text,
+                          stop_text,
+                          title.lower()
+                      )
+
+                      programmes[
+                          dedupe_key
+                      ] = (
+                          start_text,
+                          stop_text,
+                          title
+                      )
+
 
               ordered = sorted(
-                  programs.values(),
-                  key=lambda x: x[1]
+                  programmes.values(),
+                  key=lambda x: x[0]
               )
 
+
               for (
-                  source_index,
                   start_text,
                   stop_text,
-                  title_text,
-                  language
+                  title
               ) in ordered:
 
-                  p = ET.SubElement(
-                      out_root,
+                  programme_element = ET.SubElement(
+                      output_root,
                       "programme",
                       {
                           "start": start_text,
@@ -853,41 +1041,33 @@ jobs:
                       }
                   )
 
-                  title_attrs = {}
-
-                  if language:
-                      title_attrs[
-                          "lang"
-                      ] = language
-
                   ET.SubElement(
-                      p,
-                      "title",
-                      title_attrs
-                  ).text = title_text
+                      programme_element,
+                      "title"
+                  ).text = title
 
-                  kept_programs += 1
+                  total_programmes += 1
 
 
           # ============================================================
-          # ЗАПИСЬ
+          # СОХРАНЕНИЕ
           # ============================================================
 
           print("")
           print(
               f"EPG programs kept: "
-              f"{kept_programs}"
+              f"{total_programmes}"
           )
 
 
           ET.indent(
-              out_root,
+              output_root,
               space="  "
           )
 
 
-          xml_bytes = ET.tostring(
-              out_root,
+          xml_data = ET.tostring(
+              output_root,
               encoding="utf-8",
               xml_declaration=True
           )
@@ -897,24 +1077,23 @@ jobs:
               OUTPUT,
               "wb",
               compresslevel=9
-          ) as f:
+          ) as output_file:
 
-              f.write(
-                  xml_bytes
+              output_file.write(
+                  xml_data
               )
 
 
-          compressed_size = len(
-              gzip.compress(
-                  xml_bytes,
-                  compresslevel=9
-              )
+          import os
+
+          file_size = os.path.getsize(
+              OUTPUT
           )
 
 
           print(
               f"Output compressed size: "
-              f"{compressed_size} bytes"
+              f"{file_size} bytes"
           )
 
           print("")
