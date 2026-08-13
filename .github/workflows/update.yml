@@ -1,4 +1,4 @@
-name: Analyze IPTV groups
+name: Update IPTV playlist
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  analyze:
+  update-playlist:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,15 +19,18 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install requests
-        run: pip install requests
-
-      - name: Analyze groups
+      - name: Install dependencies
         run: |
-          cat > analyze_groups.py <<'PY'
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Create IPTV processor
+        run: |
+          cat > build_playlist.py <<'PY'
           import re
+          import time
           import requests
-          from collections import Counter
+          from concurrent.futures import ThreadPoolExecutor, as_completed
 
           SOURCES = [
               "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
@@ -37,82 +40,548 @@ jobs:
               "https://loganet.vercel.app/LoganetXStrawberry.m3u",
           ]
 
-          session = requests.Session()
-          session.headers.update({
-              "User-Agent": "Mozilla/5.0 IPTV Group Analyzer"
-          })
+          OUTPUT = "playlist.m3u"
 
-          groups = Counter()
-          total_channels = 0
+          # ============================================================
+          # ГРУППЫ, КОТОРЫЕ ПОЛЬЗОВАТЕЛЬ ЯВНО РЕШИЛ УДАЛИТЬ
+          # ============================================================
 
-          for source in SOURCES:
-              print(f"\nDownloading: {source}")
+          DELETE_GROUPS = {
+              "TEST (VPN)",
+              "TEST ⓵",
 
-              try:
-                  r = session.get(source, timeout=60)
-                  r.raise_for_status()
-                  text = r.text
+              "Австралия",
+              "Австрия",
+              "Азия",
+              "Албания",
+              "Арабские",
+              "Аргентина",
+              "АСАРТА (🇷🇺VPN)",
+              "Африка",
+              "Болгария",
+              "Бразилия",
+              "Великобритания",
+              "Венгрия",
+              "Германия",
+              "Греция",
+              "Израиль",
+              "ИНФО",
+              "Информационные",
+              "Иран",
+              "Испания",
+              "Италия",
+              "Канада",
+              "Латинская Америка",
+              "Мексика",
+              "Мода",
+              "Музыкальные",
+              "Музыкальные 🎶",
+              "Нидерланды",
+              "Оргтехсервис (VPN 🇷🇺)",
+              "Остальная Европа",
+              "ПОДАРОК премиальный плейлист",
+              "Польша",
+              "Португалия",
+              "Радио",
+              "Румыния",
+              "Сербия",
+              "Словакия",
+              "США",
+              "Тех поддержка",
+              "Франция",
+              "Хорватия",
+              "🔺 INFO 🔺",
+          }
 
-                  count = 0
+          # ============================================================
+          # ТОЛЬКО СОГЛАСОВАННЫЕ ОБЪЕДИНЕНИЯ
+          # ============================================================
 
-                  for line in text.splitlines():
-                      line = line.strip()
+          GROUP_MAP = {
 
-                      if line.startswith("#EXTINF:"):
-                          count += 1
+              # КИНО
+              "IPTVPLAY (Кинозал)": "Кино и сериалы",
+              "Кино Online": "Кино и сериалы",
+              "Кино и сериалы (Российские)": "Кино и сериалы",
+              "Кинозалы": "Кино и сериалы",
+              "Кинозалы (VPN)": "Кино и сериалы",
+              "Премьеры и хиты": "Кино и сериалы",
+              "Сериалы НТВ": "Кино и сериалы",
+              "Фильмы и сериалы": "Кино и сериалы",
 
-                          match = re.search(
-                              r'group-title="([^"]*)"',
-                              line,
-                              re.IGNORECASE
+              # СПОРТ
+              "Спортивные": "Спорт",
+              "Спорткомплекс 🏆": "Спорт",
+
+              # НОВОСТИ
+              "Новостные": "Новости",
+
+              # ПОЗНАВАТЕЛЬНЫЕ
+              "Образовательные": "Познавательные",
+
+              # РАЗВЛЕКАТЕЛЬНЫЕ
+              "Развлекательные (Местные)": "Развлекательные",
+
+              # РЕГИОНАЛЬНЫЕ
+              "Местные": "Региональные",
+
+              # ОБЩЕСТВЕННЫЕ
+              "Общие": "Общественные",
+
+              # WINK
+              "Wink (VPN 🇷🇺)": "Wink",
+              "Wink и другие часовые пояса": "Wink",
+
+              # СНГ — ТОЛЬКО ТО, ЧТО МЫ ОБСУДИЛИ
+              "Itv.uz (🇺🇿)": "СНГ",
+              "Наш Нет 🇺🇦": "СНГ",
+              "Турция": "СНГ",
+              "Turon Media (VPN)": "СНГ",
+
+              # РАНЕЕ СОГЛАСОВАННЫЕ СТРАНЫ СНГ
+              "Азербайджан": "СНГ",
+              "Армения": "СНГ",
+              "Беларусь": "СНГ",
+              "Казахстан": "СНГ",
+              "Кыргызстан": "СНГ",
+              "Молдавия": "СНГ",
+              "Таджикистан": "СНГ",
+              "Туркменистан": "СНГ",
+              "Узбекистан": "СНГ",
+
+              # ЭРОТИКА
+              "Эротика": "Взрослые",
+          }
+
+          # ============================================================
+          # ОПРЕДЕЛЕНИЕ ЭРОТИЧЕСКИХ / ПОРНОГРАФИЧЕСКИХ КАНАЛОВ
+          #
+          # НЕ отправляем сюда просто каналы с рейтингом 18+.
+          # Только очевидный эротический/порнографический контент.
+          # ============================================================
+
+          ADULT_WORDS = [
+              "porn",
+              "porno",
+              "xxx",
+              "erotic",
+              "erotica",
+              "adult",
+              "playboy",
+              "penthouse",
+              "brazzers",
+              "hustler",
+              "dorcel",
+              "private",
+              "passion xxx",
+              "порно",
+              "эрот",
+              "порн",
+          ]
+
+          def get_group(info):
+              match = re.search(
+                  r'group-title="([^"]*)"',
+                  info,
+                  flags=re.IGNORECASE
+              )
+
+              if match:
+                  return match.group(1).strip()
+
+              return ""
+
+          def set_group(info, group):
+              if re.search(
+                  r'group-title="[^"]*"',
+                  info,
+                  flags=re.IGNORECASE
+              ):
+                  return re.sub(
+                      r'group-title="[^"]*"',
+                      f'group-title="{group}"',
+                      info,
+                      flags=re.IGNORECASE
+                  )
+
+              return info
+
+          def is_adult(info, group):
+              text = (
+                  info + " " + group
+              ).lower()
+
+              return any(
+                  word in text
+                  for word in ADULT_WORDS
+              )
+
+          # ============================================================
+          # СКАЧИВАНИЕ ИСТОЧНИКА
+          # ============================================================
+
+          def download_playlist(url):
+
+              for attempt in range(3):
+
+                  try:
+
+                      response = requests.get(
+                          url,
+                          headers={
+                              "User-Agent":
+                                  "Mozilla/5.0 IPTV Builder"
+                          },
+                          timeout=(20, 90),
+                          allow_redirects=True
+                      )
+
+                      if (
+                          response.status_code == 200
+                          and len(response.text) > 20
+                      ):
+                          print(
+                              f"SOURCE OK: {url}"
                           )
 
-                          if match:
-                              group = match.group(1).strip()
+                          return response.text
 
-                              if group:
-                                  groups[group] += 1
-                              else:
-                                  groups["[БЕЗ ГРУППЫ]"] += 1
-                          else:
-                              groups["[БЕЗ ГРУППЫ]"] += 1
+                      print(
+                          f"SOURCE STATUS "
+                          f"{response.status_code}: {url}"
+                      )
 
-                  total_channels += count
-                  print(f"Channels: {count}")
+                  except Exception as error:
 
-              except Exception as e:
-                  print(f"ERROR: {e}")
+                      print(
+                          f"SOURCE ERROR "
+                          f"{attempt + 1}/3: "
+                          f"{url} -> {error}"
+                      )
 
-          print(f"\nTOTAL CHANNELS: {total_channels}")
-          print(f"TOTAL GROUPS: {len(groups)}")
+                  time.sleep(3)
 
-          with open("groups.txt", "w", encoding="utf-8") as f:
-              f.write("СПИСОК ГРУПП IPTV\n")
-              f.write("=================\n\n")
-              f.write(f"Всего каналов: {total_channels}\n")
-              f.write(f"Всего групп: {len(groups)}\n\n")
+              return ""
 
-              for number, (group, count) in enumerate(
-                  sorted(groups.items(), key=lambda x: x[0].lower()),
+          # ============================================================
+          # РАЗБОР M3U
+          # ============================================================
+
+          def extract_entries(text):
+
+              lines = (
+                  text
+                  .replace("\r\n", "\n")
+                  .replace("\r", "\n")
+                  .split("\n")
+              )
+
+              entries = []
+
+              current_info = None
+
+              for line in lines:
+
+                  line = line.strip()
+
+                  if not line:
+                      continue
+
+                  if line.startswith("#EXTINF:"):
+
+                      current_info = line
+                      continue
+
+                  if line.startswith("#"):
+                      continue
+
+                  if (
+                      current_info
+                      and (
+                          line.startswith("http://")
+                          or line.startswith("https://")
+                          or line.startswith("rtmp://")
+                      )
+                  ):
+
+                      entries.append(
+                          (
+                              current_info,
+                              line
+                          )
+                      )
+
+                      current_info = None
+
+              return entries
+
+          # ============================================================
+          # ПРОВЕРКА ПОТОКА
+          #
+          # Три попытки.
+          # Медленные серверы не удаляются после одной ошибки.
+          # ============================================================
+
+          def check_stream(item):
+
+              info, url = item
+
+              headers = {
+                  "User-Agent":
+                      "VLC/3.0.20 LibVLC/3.0.20",
+                  "Accept": "*/*",
+                  "Connection": "keep-alive",
+              }
+
+              for attempt in range(3):
+
+                  response = None
+
+                  try:
+
+                      response = requests.get(
+                          url,
+                          headers=headers,
+                          stream=True,
+                          timeout=(20, 45),
+                          allow_redirects=True
+                      )
+
+                      status = response.status_code
+
+                      # Успешный HTTP-ответ
+                      if 200 <= status < 300:
+
+                          try:
+
+                              chunk = next(
+                                  response.iter_content(
+                                      chunk_size=4096
+                                  )
+                              )
+
+                          except Exception:
+
+                              chunk = b""
+
+                          response.close()
+
+                          # Сервер реально что-то отдал.
+                          if chunk:
+                              return True, item
+
+                      # Редирект после разрешённых переходов
+                      elif 300 <= status < 400:
+
+                          response.close()
+
+                          return True, item
+
+                      response.close()
+
+                  except Exception as error:
+
+                      if attempt == 2:
+
+                          print(
+                              f"FAILED: {url} -> "
+                              f"{error}"
+                          )
+
+                  finally:
+
+                      if response is not None:
+
+                          try:
+                              response.close()
+                          except Exception:
+                              pass
+
+                  time.sleep(2)
+
+              return False, item
+
+          # ============================================================
+          # ОСНОВНАЯ ПРОГРАММА
+          # ============================================================
+
+          print("")
+          print("======================================")
+          print("DOWNLOADING 5 IPTV SOURCES")
+          print("======================================")
+
+          all_entries = []
+
+          for source in SOURCES:
+
+              text = download_playlist(source)
+
+              if not text:
+
+                  print(
+                      f"SOURCE FAILED: {source}"
+                  )
+
+                  continue
+
+              entries = extract_entries(text)
+
+              print(
+                  f"ENTRIES: {len(entries)}"
+              )
+
+              for info, url in entries:
+
+                  original_group = get_group(info)
+
+                  # --------------------------------------------
+                  # УДАЛЯЕМ ТОЛЬКО ЯВНО УКАЗАННЫЕ ГРУППЫ
+                  # --------------------------------------------
+
+                  if original_group in DELETE_GROUPS:
+                      continue
+
+                  # --------------------------------------------
+                  # Определяем новую группу
+                  # --------------------------------------------
+
+                  new_group = GROUP_MAP.get(
+                      original_group,
+                      original_group
+                  )
+
+                  # --------------------------------------------
+                  # Без группы
+                  # --------------------------------------------
+
+                  if not new_group:
+                      new_group = "Без категории"
+
+                  # --------------------------------------------
+                  # Только эротика/порнография
+                  # --------------------------------------------
+
+                  if is_adult(
+                      info,
+                      original_group
+                  ):
+
+                      new_group = "Взрослые"
+
+                  info = set_group(
+                      info,
+                      new_group
+                  )
+
+                  all_entries.append(
+                      (
+                          info,
+                          url
+                      )
+                  )
+
+          print("")
+          print(
+              f"TOTAL BEFORE CHECK: "
+              f"{len(all_entries)}"
+          )
+
+          # ============================================================
+          # УМНАЯ ПРОВЕРКА
+          # ============================================================
+
+          print("")
+          print("======================================")
+          print("SMART STREAM CHECK")
+          print("======================================")
+
+          working = []
+
+          with ThreadPoolExecutor(
+              max_workers=20
+          ) as executor:
+
+              futures = [
+                  executor.submit(
+                      check_stream,
+                      entry
+                  )
+                  for entry in all_entries
+              ]
+
+              total = len(futures)
+
+              for number, future in enumerate(
+                  as_completed(futures),
                   1
               ):
-                  f.write(f"{number}. {group} — {count} каналов\n")
 
-          print("\nSaved groups.txt")
+                  ok, entry = future.result()
+
+                  if ok:
+                      working.append(entry)
+
+                  if number % 100 == 0:
+
+                      print(
+                          f"CHECKED: "
+                          f"{number}/{total} | "
+                          f"WORKING: "
+                          f"{len(working)}"
+                      )
+
+          # ============================================================
+          # СОХРАНЕНИЕ
+          #
+          # ДУБЛИ НЕ УДАЛЯЕМ.
+          # ============================================================
+
+          print("")
+          print(
+              f"WORKING STREAMS: "
+              f"{len(working)}"
+          )
+
+          with open(
+              OUTPUT,
+              "w",
+              encoding="utf-8"
+          ) as file:
+
+              file.write("#EXTM3U\n")
+
+              for info, url in working:
+
+                  file.write(
+                      info + "\n"
+                  )
+
+                  file.write(
+                      url + "\n"
+                  )
+
+          print("")
+          print(
+              f"PLAYLIST CREATED: "
+              f"{OUTPUT}"
+          )
+
           PY
 
-          python analyze_groups.py
+      - name: Build playlist
+        run: |
+          python build_playlist.py
 
-      - name: Commit groups list
+      - name: Commit updated playlist
         run: |
           git config user.name "IPTV Bot"
           git config user.email "actions@users.noreply.github.com"
 
-          git add groups.txt
+          git add playlist.m3u
 
           if git diff --cached --quiet; then
-            echo "No changes."
+            echo "No playlist changes."
           else
-            git commit -m "Analyze IPTV groups"
+            git commit -m "Update IPTV playlist"
             git push
           fi
