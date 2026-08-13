@@ -41,6 +41,8 @@ jobs:
 
           EPG_SOURCES = [
               ("IPTVX_LITE", "https://iptvx.one/EPG.LITE"),
+              ("IPTVX_FULL", "https://iptvx.one/EPG"),
+              ("IPTVX_GZ", "https://iptvx.one/epg/epg.xml.gz"),
               ("EDEM", "http://epg.it999.ru/edem.xml.gz"),
           ]
 
