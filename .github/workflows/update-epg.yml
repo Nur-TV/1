@@ -32,7 +32,7 @@ jobs:
           from datetime import datetime, timedelta, timezone
 
           PLAYLIST_URL = "https://raw.githubusercontent.com/Nur-TV/1/main/playlist.m3u"
-          EPG_URL = "https://epg.one.team/3.1.xml.gz"
+          EPG_URL = "http://epg.one/epg.xml.gz"
           OUTPUT = "epg.xml.gz"
 
           def norm(text):
@@ -71,7 +71,7 @@ jobs:
           print(f"Playlist channel names: {len(playlist_names)}")
           print("Downloading source EPG...")
           raw = fetch(EPG_URL)
-          if raw[:2] == b"\\x1f\\x8b":
+          if raw[:2] == b"\x1f\x8b":
               raw = gzip.decompress(raw)
 
           root = ET.fromstring(raw)
@@ -83,7 +83,6 @@ jobs:
 
           matched_ids = set()
           out_channels = []
-          channel_names = {}
 
           for ch in root.findall("channel"):
               cid = ch.get("id", "")
@@ -92,7 +91,6 @@ jobs:
               if normalized & playlist_names:
                   matched_ids.add(cid)
                   out_channels.append(ch)
-                  channel_names[cid] = names[0] if names else cid
 
           print(f"Matched EPG channels: {len(out_channels)}")
 
