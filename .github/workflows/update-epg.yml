@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build lightweight EPG
+      - name: Build combined lightweight EPG
         run: |
           cat > build_epg.py <<'PY'
           import gzip
@@ -32,125 +32,896 @@ jobs:
           from datetime import datetime, timedelta, timezone
 
           PLAYLIST_URL = "https://raw.githubusercontent.com/Nur-TV/1/main/playlist.m3u"
-          EPG_URL = "http://epg.one/epg.xml.gz"
+
+          EPG_SOURCES = [
+              ("IPTVX LITE", "https://iptvx.one/EPG.LITE"),
+              ("IPTVX FULL", "https://iptvx.one/EPG"),
+              ("IPTVX GZ", "https://iptvx.one/epg/epg.xml.gz"),
+              ("EDEM", "http://epg.it999.ru/edem.xml.gz"),
+          ]
+
           OUTPUT = "epg.xml.gz"
 
           def norm(text):
               text = unicodedata.normalize("NFKC", text or "")
               text = text.lower().replace("ё", "е")
+
               text = re.sub(r"\([^)]*\)", " ", text)
               text = re.sub(r"\[[^]]*\]", " ", text)
-              text = re.sub(r"\b(uhd|4k|fhd|hd|sd|hdtv)\b", " ", text)
-              text = re.sub(r"[^\w\sа-яё]", " ", text, flags=re.IGNORECASE)
+
+              text = re.sub(
+                  r"\b(uhd|4k|fhd|hd|sd|hdtv|tv|телеканал|канал)\b",
+                  " ",
+                  text,
+                  flags=re.IGNORECASE
+              )
+
+              text = re.sub(
+                  r"[^0-9a-zа-яё]+",
+                  " ",
+                  text,
+                  flags=re.IGNORECASE
+              )
+
               return re.sub(r"\s+", " ", text).strip()
 
+
           def fetch(url):
-              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 NurTV EPG"})
-              with urllib.request.urlopen(req, timeout=120) as r:
-                  return r.read()
+              req = urllib.request.Request(
+                  url,
+                  headers={
+                      "User-Agent": "Mozilla/5.0 NurTV EPG Builder"
+                  }
+              )
+
+              with urllib.request.urlopen(
+                  req,
+                  timeout=180
+              ) as response:
+                  return response.read()
+
+
+          def load_xml(url):
+              raw = fetch(url)
+
+              if raw[:2] == b"\x1f\x8b":
+                  raw = gzip.decompress(raw)
+
+              return ET.fromstring(raw)
+
+
+          print("======================================")
+          print("NURTV EPG BUILDER")
+          print("======================================")
 
           print("Downloading playlist...")
-          playlist = fetch(PLAYLIST_URL).decode("utf-8", errors="replace")
 
-          playlist_names = set()
-          playlist_logo_by_name = {}
-          for line in playlist.splitlines():
-              if not line.startswith("#EXTINF:"):
+          playlist_raw = fetch(
+              PLAYLIST_URL
+          ).decode(
+              "utf-8",
+              errors="replace"
+          )
+
+          playlist_channels = []
+
+          current_info = None
+
+          for line in playlist_raw.splitlines():
+
+              line = line.strip()
+
+              if line.startswith("#EXTINF:"):
+                  current_info = line
                   continue
-              m = re.search(r",(.*)$", line)
-              if not m:
-                  continue
-              name = m.group(1).strip()
-              n = norm(name)
-              if n:
-                  playlist_names.add(n)
-                  logo = re.search(r'tvg-logo="([^"]+)"', line, re.I)
-                  if logo:
-                      playlist_logo_by_name[n] = logo.group(1)
 
-          print(f"Playlist channel names: {len(playlist_names)}")
-          print("Downloading source EPG...")
-          raw = fetch(EPG_URL)
-          if raw[:2] == b"\x1f\x8b":
-              raw = gzip.decompress(raw)
+              if (
+                  current_info
+                  and (
+                      line.startswith("http://")
+                      or line.startswith("https://")
+                      or line.startswith("rtmp://")
+                  )
+              ):
 
-          root = ET.fromstring(raw)
+                  name_match = re.search(
+                      r",(.+)$",
+                      current_info
+                  )
 
-          # Keep a compact 3-days-back + 1-day-forward window.
-          now = datetime.now(timezone.utc)
-          start = now - timedelta(days=3)
-          end = now + timedelta(days=1)
+                  if name_match:
 
-          matched_ids = set()
-          out_channels = []
+                      name = name_match.group(1).strip()
 
-          for ch in root.findall("channel"):
-              cid = ch.get("id", "")
-              names = [x.text.strip() for x in ch.findall("display-name") if x.text and x.text.strip()]
-              normalized = {norm(x) for x in names if norm(x)}
-              if normalized & playlist_names:
-                  matched_ids.add(cid)
-                  out_channels.append(ch)
+                      tvg_id_match = re.search(
+                          r'tvg-id="([^"]*)"',
+                          current_info,
+                          re.IGNORECASE
+                      )
 
-          print(f"Matched EPG channels: {len(out_channels)}")
+                      logo_match = re.search(
+                          r'tvg-logo="([^"]*)"',
+                          current_info,
+                          re.IGNORECASE
+                      )
 
-          out_root = ET.Element("tv", {"generator-info-name": "NurTV lightweight EPG"})
+                      tvg_id = (
+                          tvg_id_match.group(1).strip()
+                          if tvg_id_match
+                          else ""
+                      )
 
-          # Channels: keep only id, names and logos. No extra metadata.
-          for ch in out_channels:
-              out_ch = ET.SubElement(out_root, "channel", {"id": ch.get("id", "")})
-              names = [x.text.strip() for x in ch.findall("display-name") if x.text and x.text.strip()]
-              for name in names[:3]:
-                  ET.SubElement(out_ch, "display-name").text = name
-              icon = ch.find("icon")
-              icon_url = icon.get("src", "") if icon is not None else ""
-              if not icon_url:
-                  for n in names:
-                      logo = playlist_logo_by_name.get(norm(n))
-                      if logo:
-                          icon_url = logo
-                          break
-              if icon_url:
-                  ET.SubElement(out_ch, "icon", {"src": icon_url})
+                      logo = (
+                          logo_match.group(1).strip()
+                          if logo_match
+                          else ""
+                      )
+
+                      playlist_channels.append({
+                          "name": name,
+                          "norm": norm(name),
+                          "tvg_id": tvg_id,
+                          "logo": logo,
+                      })
+
+                  current_info = None
+
+
+          print(
+              f"Playlist channels: "
+              f"{len(playlist_channels)}"
+          )
+
+
+          # ============================================================
+          # УДАЛЯЕМ ПОВТОРЫ ТОЛЬКО ДЛЯ EPG-СОПОСТАВЛЕНИЯ.
+          # САМ PLAYLIST НЕ МЕНЯЕМ.
+          # ============================================================
+
+          unique_playlist = {}
+
+          for channel in playlist_channels:
+
+              key = (
+                  channel["tvg_id"].lower().strip()
+                  if channel["tvg_id"]
+                  else channel["norm"]
+              )
+
+              if key and key not in unique_playlist:
+                  unique_playlist[key] = channel
+
+
+          playlist_channels = list(
+              unique_playlist.values()
+          )
+
+
+          print(
+              f"Unique playlist channels: "
+              f"{len(playlist_channels)}"
+          )
+
+
+          # ============================================================
+          # ЗАГРУЖАЕМ ВСЕ 4 EPG
+          # ============================================================
+
+          sources = []
+
+          for source_name, source_url in EPG_SOURCES:
+
+              print("")
+              print(
+                  f"Downloading EPG: "
+                  f"{source_name}"
+              )
+
+              try:
+
+                  root = load_xml(
+                      source_url
+                  )
+
+                  channels = root.findall(
+                      "channel"
+                  )
+
+                  programs = root.findall(
+                      "programme"
+                  )
+
+                  print(
+                      f"{source_name}: "
+                      f"{len(channels)} channels, "
+                      f"{len(programs)} programs"
+                  )
+
+                  sources.append(
+                      (
+                          source_name,
+                          root
+                      )
+                  )
+
+              except Exception as error:
+
+                  print(
+                      f"{source_name} FAILED: "
+                      f"{error}"
+                  )
+
+
+          # ============================================================
+          # СОБИРАЕМ ВСЕ ВАРИАНТЫ EPG-КАНАЛОВ
+          #
+          # Приоритет:
+          #
+          # 1. IPTVX LITE
+          # 2. IPTVX FULL
+          # 3. IPTVX GZ
+          # 4. EDEM
+          #
+          # Но программа будет проверяться у всех источников.
+          # ============================================================
+
+          epg_by_id = {}
+          epg_by_name = {}
+
+
+          for source_index, (
+              source_name,
+              root
+          ) in enumerate(sources):
+
+              for channel in root.findall(
+                  "channel"
+              ):
+
+                  cid = (
+                      channel.get(
+                          "id",
+                          ""
+                      ).strip()
+                  )
+
+                  if not cid:
+                      continue
+
+                  names = []
+
+                  for display in channel.findall(
+                      "display-name"
+                  ):
+
+                      if (
+                          display.text
+                          and display.text.strip()
+                      ):
+
+                          names.append(
+                              display.text.strip()
+                          )
+
+                  normalized_names = set()
+
+                  for name in names:
+
+                      n = norm(name)
+
+                      if n:
+                          normalized_names.add(n)
+
+                          epg_by_name.setdefault(
+                              n,
+                              []
+                          ).append(
+                              (
+                                  source_index,
+                                  cid,
+                                  channel
+                              )
+                          )
+
+                  epg_by_id[
+                      cid.lower()
+                  ] = (
+                      source_index,
+                      channel,
+                      normalized_names
+                  )
+
+
+          # ============================================================
+          # ИЩЕМ ЛУЧШИЙ EPG-КАНАЛ
+          # ============================================================
+
+          def find_epg_channel(
+              playlist_channel
+          ):
+
+              tvg_id = (
+                  playlist_channel[
+                      "tvg_id"
+                  ].strip().lower()
+              )
+
+              # --------------------------------------------------------
+              # 1. ТОЧНОЕ СОВПАДЕНИЕ TVG-ID
+              # --------------------------------------------------------
+
+              if tvg_id:
+
+                  direct = epg_by_id.get(
+                      tvg_id
+                  )
+
+                  if direct:
+
+                      return (
+                          direct[0],
+                          direct[1],
+                          "tvg-id"
+                      )
+
+
+              # --------------------------------------------------------
+              # 2. ТОЧНОЕ НОРМАЛИЗОВАННОЕ НАЗВАНИЕ
+              # --------------------------------------------------------
+
+              pname = playlist_channel[
+                  "norm"
+              ]
+
+              candidates = epg_by_name.get(
+                  pname,
+                  []
+              )
+
+              if candidates:
+
+                  candidates = sorted(
+                      candidates,
+                      key=lambda x: x[0]
+                  )
+
+                  return (
+                      candidates[0][0],
+                      candidates[0][2],
+                      "exact-name"
+                  )
+
+
+              # --------------------------------------------------------
+              # 3. ЧАСТИЧНОЕ СОВПАДЕНИЕ
+              #
+              # Используем только достаточно длинные названия.
+              # Это защищает от ошибочных совпадений типа:
+              # "Россия" -> "Россия 1".
+              # --------------------------------------------------------
+
+              if len(pname) >= 5:
+
+                  best = None
+                  best_score = 0
+
+                  for epg_name, candidates in epg_by_name.items():
+
+                      if len(epg_name) < 5:
+                          continue
+
+                      score = 0
+
+                      if pname == epg_name:
+                          score = 100
+
+                      elif (
+                          pname in epg_name
+                          or epg_name in pname
+                      ):
+
+                          shorter = min(
+                              len(pname),
+                              len(epg_name)
+                          )
+
+                          longer = max(
+                              len(pname),
+                              len(epg_name)
+                          )
+
+                          score = (
+                              shorter / longer
+                          ) * 80
+
+                      else:
+
+                          p_words = set(
+                              pname.split()
+                          )
+
+                          e_words = set(
+                              epg_name.split()
+                          )
+
+                          common = (
+                              p_words
+                              & e_words
+                          )
+
+                          if common:
+
+                              score = (
+                                  len(common)
+                                  / max(
+                                      len(
+                                          p_words
+                                      ),
+                                      len(
+                                          e_words
+                                      )
+                                  )
+                              ) * 70
+
+                      if score > best_score:
+
+                          best_score = score
+                          best = candidates
+
+                  if (
+                      best
+                      and best_score >= 65
+                  ):
+
+                      best = sorted(
+                          best,
+                          key=lambda x: x[0]
+                      )
+
+                      return (
+                          best[0][0],
+                          best[0][2],
+                          "fuzzy"
+                      )
+
+
+              return None
+
+
+          # ============================================================
+          # СОПОСТАВЛЕНИЕ
+          # ============================================================
+
+          matched = {}
+
+          unmatched = []
+
+          for playlist_channel in playlist_channels:
+
+              result = find_epg_channel(
+                  playlist_channel
+              )
+
+              if result:
+
+                  source_index, epg_channel, method = result
+
+                  cid = epg_channel.get(
+                      "id",
+                      ""
+                  )
+
+                  matched[
+                      playlist_channel["norm"]
+                  ] = {
+                      "playlist": playlist_channel,
+                      "source_index": source_index,
+                      "epg_channel": epg_channel,
+                      "method": method,
+                      "epg_id": cid,
+                  }
+
+              else:
+
+                  unmatched.append(
+                      playlist_channel
+                  )
+
+
+          print("")
+          print("======================================")
+          print("MATCH RESULT")
+          print("======================================")
+
+          print(
+              f"Playlist channels: "
+              f"{len(playlist_channels)}"
+          )
+
+          print(
+              f"EPG matched: "
+              f"{len(matched)}"
+          )
+
+          print(
+              f"Without EPG: "
+              f"{len(unmatched)}"
+          )
+
+
+          # ============================================================
+          # ВЫХОДНОЙ XML
+          # ============================================================
+
+          out_root = ET.Element(
+              "tv",
+              {
+                  "generator-info-name":
+                      "NurTV lightweight combined EPG"
+              }
+          )
+
+
+          # Старые EPG ID могут быть странными.
+          # Создаём свои стабильные ID для каждого канала.
+          output_id_by_playlist = {}
+
+
+          for index, item in enumerate(
+              matched.values(),
+              1
+          ):
+
+              playlist_channel = item[
+                  "playlist"
+              ]
+
+              output_id = (
+                  playlist_channel["tvg_id"]
+                  or f"nurtv-{index}"
+              )
+
+              output_id = re.sub(
+                  r"[^A-Za-z0-9_.:-]",
+                  "_",
+                  output_id
+              )
+
+              output_id_by_playlist[
+                  playlist_channel["norm"]
+              ] = output_id
+
+              out_channel = ET.SubElement(
+                  out_root,
+                  "channel",
+                  {
+                      "id": output_id
+                  }
+              )
+
+              ET.SubElement(
+                  out_channel,
+                  "display-name"
+              ).text = playlist_channel[
+                  "name"
+              ]
+
+              logo = playlist_channel[
+                  "logo"
+              ]
+
+              if not logo:
+
+                  source_channel = item[
+                      "epg_channel"
+                  ]
+
+                  icon = source_channel.find(
+                      "icon"
+                  )
+
+                  if icon is not None:
+
+                      logo = icon.get(
+                          "src",
+                          ""
+                      )
+
+              if logo:
+
+                  ET.SubElement(
+                      out_channel,
+                      "icon",
+                      {
+                          "src": logo
+                      }
+                  )
+
+
+          # ============================================================
+          # ВРЕМЕННОЕ ОКНО
+          #
+          # 3 ДНЯ НАЗАД
+          # ДО 1 ДНЯ ВПЕРЁД
+          # ============================================================
+
+          now = datetime.now(
+              timezone.utc
+          )
+
+          window_start = (
+              now
+              - timedelta(days=3)
+          )
+
+          window_end = (
+              now
+              + timedelta(days=1)
+          )
+
+
+          # ============================================================
+          # СОБИРАЕМ ПРОГРАММЫ ИЗ ВСЕХ 4 ИСТОЧНИКОВ
+          # ============================================================
+
+          programs_by_output_id = {}
+
+
+          for item in matched.values():
+
+              playlist_channel = item[
+                  "playlist"
+              ]
+
+              output_id = output_id_by_playlist[
+                  playlist_channel["norm"]
+              ]
+
+              programs_by_output_id[
+                  output_id
+              ] = {}
+
+
+          for source_index, (
+              source_name,
+              root
+          ) in enumerate(sources):
+
+              print(
+                  f"Processing programs: "
+                  f"{source_name}"
+              )
+
+              for programme in root.findall(
+                  "programme"
+              ):
+
+                  old_cid = programme.get(
+                      "channel",
+                      ""
+                  ).strip()
+
+                  if not old_cid:
+                      continue
+
+
+                  # Находим все наши каналы,
+                  # связанные с этим EPG ID.
+
+                  target_items = []
+
+                  for item in matched.values():
+
+                      if (
+                          item["epg_id"]
+                          == old_cid
+                      ):
+
+                          target_items.append(
+                              item
+                          )
+
+
+                  if not target_items:
+                      continue
+
+
+                  start_text = programme.get(
+                      "start",
+                      ""
+                  )
+
+                  stop_text = programme.get(
+                      "stop",
+                      ""
+                  )
+
+                  try:
+
+                      start_dt = datetime.strptime(
+                          start_text[:14],
+                          "%Y%m%d%H%M%S"
+                      ).replace(
+                          tzinfo=timezone.utc
+                      )
+
+                      if stop_text:
+
+                          stop_dt = datetime.strptime(
+                              stop_text[:14],
+                              "%Y%m%d%H%M%S"
+                          ).replace(
+                              tzinfo=timezone.utc
+                          )
+
+                      else:
+
+                          stop_dt = (
+                              start_dt
+                              + timedelta(hours=1)
+                          )
+
+                  except Exception:
+
+                      continue
+
+
+                  if (
+                      stop_dt < window_start
+                      or start_dt > window_end
+                  ):
+
+                      continue
+
+
+                  title = programme.find(
+                      "title"
+                  )
+
+                  if (
+                      title is None
+                      or not title.text
+                      or not title.text.strip()
+                  ):
+
+                      continue
+
+
+                  title_text = title.text.strip()
+
+
+                  for item in target_items:
+
+                      output_id = output_id_by_playlist[
+                          item["playlist"]["norm"]
+                      ]
+
+                      key = (
+                          start_text,
+                          stop_text,
+                          title_text
+                      )
+
+                      programs_by_output_id[
+                          output_id
+                      ].setdefault(
+                          key,
+                          (
+                              source_index,
+                              start_text,
+                              stop_text,
+                              title_text,
+                              title.get(
+                                  "lang",
+                                  ""
+                              )
+                          )
+                      )
+
+
+          # ============================================================
+          # ЗАПИСЬ ПРОГРАММ
+          # ============================================================
 
           kept_programs = 0
-          for p in root.findall("programme"):
-              cid = p.get("channel", "")
-              if cid not in matched_ids:
-                  continue
-              try:
-                  s = p.get("start", "")
-                  e = p.get("stop", "")
-                  ps = datetime.strptime(s[:14], "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-                  pe = datetime.strptime(e[:14], "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc) if e else ps + timedelta(hours=1)
-              except Exception:
-                  continue
-              if pe < start or ps > end:
-                  continue
 
-              out_p = ET.SubElement(out_root, "programme", {
-                  "start": p.get("start", ""),
-                  "stop": p.get("stop", ""),
-                  "channel": cid,
-              })
 
-              title = p.find("title")
-              if title is not None and title.text:
-                  t = ET.SubElement(out_p, "title", {"lang": title.get("lang", "ru")})
-                  t.text = title.text.strip()
+          for output_id, programs in (
+              programs_by_output_id.items()
+          ):
 
-              # Deliberately omit desc, credits, category, episode-num,
-              # rating, previously-shown, video/audio and all other metadata.
-              kept_programs += 1
+              ordered = sorted(
+                  programs.values(),
+                  key=lambda x: x[1]
+              )
 
-          tree = ET.ElementTree(out_root)
-          ET.indent(tree, space="  ")
-          xml_bytes = ET.tostring(out_root, encoding="utf-8", xml_declaration=True)
-          with gzip.open(OUTPUT, "wb", compresslevel=9) as f:
-              f.write(xml_bytes)
+              for (
+                  source_index,
+                  start_text,
+                  stop_text,
+                  title_text,
+                  language
+              ) in ordered:
 
-          print(f"EPG programs kept: {kept_programs}")
-          print(f"Output compressed size: {len(gzip.compress(xml_bytes, compresslevel=9))} bytes")
+                  p = ET.SubElement(
+                      out_root,
+                      "programme",
+                      {
+                          "start": start_text,
+                          "stop": stop_text,
+                          "channel": output_id
+                      }
+                  )
+
+                  title_attrs = {}
+
+                  if language:
+                      title_attrs[
+                          "lang"
+                      ] = language
+
+                  ET.SubElement(
+                      p,
+                      "title",
+                      title_attrs
+                  ).text = title_text
+
+                  kept_programs += 1
+
+
+          # ============================================================
+          # ЗАПИСЬ
+          # ============================================================
+
+          print("")
+          print(
+              f"EPG programs kept: "
+              f"{kept_programs}"
+          )
+
+
+          ET.indent(
+              out_root,
+              space="  "
+          )
+
+
+          xml_bytes = ET.tostring(
+              out_root,
+              encoding="utf-8",
+              xml_declaration=True
+          )
+
+
+          with gzip.open(
+              OUTPUT,
+              "wb",
+              compresslevel=9
+          ) as f:
+
+              f.write(
+                  xml_bytes
+              )
+
+
+          compressed_size = len(
+              gzip.compress(
+                  xml_bytes,
+                  compresslevel=9
+              )
+          )
+
+
+          print(
+              f"Output compressed size: "
+              f"{compressed_size} bytes"
+          )
+
+          print("")
+          print("======================================")
+          print("FINAL EPG READY")
+          print("======================================")
+
           PY
 
           python build_epg.py
@@ -159,10 +930,12 @@ jobs:
         run: |
           git config user.name "IPTV Bot"
           git config user.email "actions@users.noreply.github.com"
+
           git add epg.xml.gz
+
           if git diff --cached --quiet; then
             echo "No EPG changes."
           else
-            git commit -m "Update lightweight EPG"
+            git commit -m "Update combined lightweight EPG"
             git push
           fi
