@@ -2,6 +2,7 @@ name: Update IPTV playlist
 
 on:
   workflow_dispatch:
+
   schedule:
     - cron: "0 3,15 * * *"
 
@@ -13,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -26,13 +28,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      - name: Check ffprobe
+        run: |
+          ffprobe -version
+
       - name: Create IPTV processor
         run: |
           cat > build_playlist.py <<'PY'
+
           import re
           import time
+          import subprocess
           import requests
+
           from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
+          # ============================================================
+          # ИСТОЧНИКИ
+          # ============================================================
 
           SOURCES = [
               "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
@@ -44,11 +58,14 @@ jobs:
 
           OUTPUT = "playlist.m3u"
 
+
           # ============================================================
-          # УДАЛЯЕМ ТОЛЬКО СОГЛАСОВАННЫЕ ГРУППЫ
+          # ГРУППЫ, КОТОРЫЕ УДАЛЯЕМ
           # ============================================================
 
           DELETE_GROUPS = {
+              "4K VIDEO (VPN)",
+
               "Catcast TV 🐈 Not 24/7",
 
               "Австралия",
@@ -59,38 +76,53 @@ jobs:
               "Аргентина",
               "АСАРТА (🇷🇺VPN)",
               "Африка",
+
               "Болгария",
               "Бразилия",
               "Великобритания",
               "Венгрия",
               "Германия",
               "Греция",
+
               "Израиль",
+
               "ИНФО",
               "Информационные",
               "Иран",
               "Испания",
               "Италия",
+
               "Канада",
               "Латинская Америка",
               "Мексика",
               "Мода",
+
               "Музыкальные",
               "Музыкальные 🎶",
+
               "Нидерланды",
+
               "Оргтехсервис (VPN 🇷🇺)",
+
               "Остальная Европа",
+
               "ПОДАРОК премиальный плейлист",
+
               "Польша",
               "Португалия",
+
               "Радио",
+
               "Румыния",
               "Сербия",
               "Словакия",
               "США",
+
               "Тех поддержка",
+
               "Франция",
               "Хорватия",
+
               "🔺 INFO 🔺",
 
               "TEST (VPN)",
@@ -99,19 +131,16 @@ jobs:
               "Чехия",
               "НТВ",
               "Твоё ТВ",
-
-              "4K VIDEO (VPN)",
           }
 
+
           # ============================================================
-          # ОБЪЕДИНЕНИЯ И ПЕРЕИМЕНОВАНИЯ
+          # ОБЪЕДИНЕНИЕ ГРУПП
           # ============================================================
 
           GROUP_MAP = {
 
-              # -------------------------
               # КИНО
-              # -------------------------
               "IPTVPLAY (Кинозал)": "Кино и сериалы",
               "Кино Online": "Кино и сериалы",
               "Кино и сериалы (Российские)": "Кино и сериалы",
@@ -121,87 +150,133 @@ jobs:
               "Сериалы НТВ": "Кино и сериалы",
               "Фильмы и сериалы": "Кино и сериалы",
 
-              # -------------------------
               # СПОРТ
-              # -------------------------
               "Спортивные": "Спорт",
               "Спорткомплекс 🏆": "Спорт",
 
-              # -------------------------
               # НОВОСТИ
-              # -------------------------
               "Новостные": "Новости",
 
-              # -------------------------
               # ПОЗНАВАТЕЛЬНЫЕ
-              # -------------------------
               "Образовательные": "Познавательные",
 
-              # -------------------------
               # РАЗВЛЕКАТЕЛЬНЫЕ
-              # -------------------------
               "Развлекательные (Местные)": "Развлекательные",
 
-              # -------------------------
               # РЕГИОНАЛЬНЫЕ
-              # -------------------------
               "Местные": "Региональные",
 
-              # -------------------------
               # ОБЩЕСТВЕННЫЕ
-              # -------------------------
               "Общие": "Общественные",
 
-              # -------------------------
-              # УЗБЕКИСТАН
-              # -------------------------
-              "Itv.uz (🇺🇿)": "Узбекистан",
-              "Turon Media (VPN)": "Узбекистан",
-
-              # -------------------------
-              # УКРАИНА
-              # -------------------------
-              "Наш Нет 🇺🇦": "Украина",
-
-              # -------------------------
-              # ВЗРОСЛЫЕ
-              # -------------------------
-              "Эротика": "Взрослые",
-
-              # -------------------------
-              # РАЗНОЕ
-              # -------------------------
-              "StarNet (VPN 🇳🇱)": "Разное",
-              "Сириус": "Разное",
-              "Vivacom BG": "Разное",
-              "NNT": "Разное",
-              "Oracle Corporation": "Разное",
-              "Cloud_Flare": "Разное",
-              "Cloudflare_Inc!": "Разное",
-              "Инет": "Разное",
-              "Internet42 LLC": "Разное",
-              "📺 Usba TV": "Разное",
-              "RELAX🏝️": "Разное",
-              "С сайтов": "Разное",
-              "С сайтов (VPN)": "Разное",
-              "Современные сетевые технологии (VPN)": "Разное",
-              "Цитадель-Крым (VPN)": "Разное",
-              "Lime (VPN 🇷🇺)": "Разное",
-              "Большое ТВ (VPN)": "Разное",
-              "Rutube (VPN)": "Разное",
-              "Виктория (VPN 🇷🇺)": "Разное",
-              "Квант-Телеком (VPN 🇷🇺)": "Разное",
-              "Webhost (VPN 🇷🇺)": "Разное",
-              "Телевизор 24 (VPN)": "Разное",
-              "↕️ Торрент ТВ ↕️": "Разное",
-              "Подборка каналов с интернета": "Разное",
-              "Подборка": "Разное",
+              # WINK
               "Wink (VPN 🇷🇺)": "Разное",
               "Wink и другие часовые пояса": "Разное",
+
+              # СНГ
+              "Itv.uz (🇺🇿)": "Узбекистан",
+
+              # TURON ОСТАВЛЯЕМ ОТДЕЛЬНО
+              "Turon Media (VPN)": "Turon Media (VPN)",
+
+              # ОТДЕЛЬНЫЕ СТРАНЫ СНГ
+              "Азербайджан": "Азербайджан",
+              "Армения": "Армения",
+              "Беларусь": "Беларусь",
+              "Казахстан": "Казахстан",
+              "Кыргызстан": "Кыргызстан",
+              "Молдавия": "Молдавия",
+              "Таджикистан": "Таджикистан",
+              "Туркменистан": "Туркменистан",
+              "Узбекистан": "Узбекистан",
+
+              # НЕ СНГ
+              "Индия": "Индия",
+              "Грузия": "Грузия",
+              "Турция": "Турция",
+
+              # ВЗРОСЛЫЕ
+              "Эротика": "Взрослые",
           }
 
+
           # ============================================================
-          # ОЧЕВИДНАЯ ЭРОТИКА / ПОРНОГРАФИЯ
+          # СТРАННЫЕ / ТЕХНИЧЕСКИЕ ГРУППЫ -> РАЗНОЕ
+          # ============================================================
+
+          MISC_GROUPS = {
+              "StarNet (VPN 🇳🇱)",
+              "Сириус",
+              "Vivacom BG",
+              "NNT",
+              "Oracle Corporation",
+              "Cloud_Flare",
+              "Cloudflare_Inc!",
+              "Инет",
+              "Internet42 LLC",
+              "📺 Usba TV",
+              "RELAX🏝️",
+              "С сайтов",
+              "С сайтов (VPN)",
+              "Современные сетевые технологии (VPN)",
+              "Цитадель-Крым (VPN)",
+              "Lime (VPN 🇷🇺)",
+              "Большое ТВ (VPN)",
+              "Rutube (VPN)",
+              "Виктория (VPN 🇷🇺)",
+              "Квант-Телеком (VPN 🇷🇺)",
+              "Webhost (VPN 🇷🇺)",
+              "Телевизор 24 (VPN)",
+              "↕️ Торрент ТВ ↕️",
+              "Подборка каналов с интернета",
+              "Подборка",
+          }
+
+
+          # ============================================================
+          # ПОРЯДОК ГРУПП
+          # ============================================================
+
+          GROUP_ORDER = [
+              "Кино и сериалы",
+              "Федеральные",
+              "Развлекательные",
+              "Спорт",
+              "Детские",
+              "Религиозные",
+              "Эфирные",
+              "Познавательные",
+              "Региональные",
+              "Новости",
+              "Разное",
+              "Мужские",
+              "Без категории",
+              "Общественные",
+              "Будущее",
+              "Досуг",
+              "Культура",
+              "Христианские",
+              "Хобби и увлечения",
+              "Медитативные",
+              "Взрослые",
+              "Индия",
+              "Грузия",
+              "Турция",
+              "Азербайджан",
+              "Армения",
+              "Беларусь",
+              "Казахстан",
+              "Кыргызстан",
+              "Молдавия",
+              "Таджикистан",
+              "Туркменистан",
+              "Узбекистан",
+              "Turon Media (VPN)",
+          ]
+
+
+          # ============================================================
+          # ОЧЕВИДНЫЕ ВЗРОСЛЫЕ КАНАЛЫ
           # ============================================================
 
           ADULT_WORDS = [
@@ -223,32 +298,13 @@ jobs:
               "порн",
           ]
 
-          # ============================================================
-          # ОЧЕВИДНЫЕ ЖЕНСКИЕ КАНАЛЫ
-          #
-          # Очень осторожный автоматический фильтр.
-          # Не переносим обычные каналы только потому,
-          # что в названии есть слово "женщина" в другом контексте.
-          # ============================================================
 
-          FEMALE_WORDS = [
-              "women",
-              "woman",
-              "female",
-              "ladies",
-              "lady",
-              "girls",
-              "girl",
-              "женский",
-              "женские",
-              "женское",
-              "женщина",
-              "женщины",
-              "девушки",
-              "девич",
-          ]
+          # ============================================================
+          # ПОЛУЧЕНИЕ ГРУППЫ
+          # ============================================================
 
           def get_group(info):
+
               match = re.search(
                   r'group-title="([^"]*)"',
                   info,
@@ -260,7 +316,9 @@ jobs:
 
               return ""
 
+
           def set_group(info, group):
+
               if re.search(
                   r'group-title="[^"]*"',
                   info,
@@ -273,19 +331,15 @@ jobs:
                       flags=re.IGNORECASE
                   )
 
-              # Если group-title вообще отсутствует,
-              # добавляем его перед остальными параметрами.
-              return re.sub(
-                  r'(#EXTINF:[^,]*)(,)',
-                  rf'\1 group-title="{group}"\2',
-                  info,
-                  count=1,
-                  flags=re.IGNORECASE
-              )
+              return info
+
 
           def is_adult(info, group):
+
               text = (
-                  info + " " + group
+                  info
+                  + " "
+                  + group
               ).lower()
 
               return any(
@@ -293,18 +347,9 @@ jobs:
                   for word in ADULT_WORDS
               )
 
-          def is_female(info, group):
-              text = (
-                  info + " " + group
-              ).lower()
-
-              return any(
-                  word in text
-                  for word in FEMALE_WORDS
-              )
 
           # ============================================================
-          # СКАЧИВАНИЕ ИСТОЧНИКА
+          # СКАЧИВАНИЕ
           # ============================================================
 
           def download_playlist(url):
@@ -312,6 +357,7 @@ jobs:
               for attempt in range(3):
 
                   try:
+
                       response = requests.get(
                           url,
                           headers={
@@ -326,17 +372,21 @@ jobs:
                           response.status_code == 200
                           and len(response.text) > 20
                       ):
+
                           print(
                               f"SOURCE OK: {url}"
                           )
+
                           return response.text
 
                       print(
                           f"SOURCE STATUS "
-                          f"{response.status_code}: {url}"
+                          f"{response.status_code}: "
+                          f"{url}"
                       )
 
                   except Exception as error:
+
                       print(
                           f"SOURCE ERROR "
                           f"{attempt + 1}/3: "
@@ -346,6 +396,7 @@ jobs:
                   time.sleep(2)
 
               return ""
+
 
           # ============================================================
           # РАЗБОР M3U
@@ -361,6 +412,7 @@ jobs:
               )
 
               entries = []
+
               current_info = None
 
               for line in lines:
@@ -371,10 +423,13 @@ jobs:
                       continue
 
                   if line.startswith("#EXTINF:"):
+
                       current_info = line
+
                       continue
 
                   if line.startswith("#"):
+
                       continue
 
                   if (
@@ -385,6 +440,7 @@ jobs:
                           or line.startswith("rtmp://")
                       )
                   ):
+
                       entries.append(
                           (
                               current_info,
@@ -396,118 +452,144 @@ jobs:
 
               return entries
 
+
           # ============================================================
-          # ПРОВЕРКА ПОТОКА
+          # ПРОВЕРКА РЕАЛЬНОГО МЕДИАПОТОКА
+          #
+          # ВАЖНО:
+          #
+          # HTTP 200 больше НЕ считается достаточным.
+          #
+          # Используем ffprobe.
+          #
+          # ffprobe должен увидеть настоящий медиапоток.
           # ============================================================
 
-          def check_stream(item):
+          def probe_stream(item):
 
               info, url = item
 
-              headers = {
-                  "User-Agent":
-                      "VLC/3.0.20 LibVLC/3.0.20",
-                  "Accept": "*/*",
-                  "Connection": "keep-alive",
-              }
+              headers = (
+                  "User-Agent: VLC/3.0.20\r\n"
+                  "Accept: */*\r\n"
+              )
+
+              command = [
+                  "ffprobe",
+
+                  "-v",
+                  "error",
+
+                  "-hide_banner",
+
+                  "-user_agent",
+                  "VLC/3.0.20",
+
+                  "-rw_timeout",
+                  "10000000",
+
+                  "-timeout",
+                  "10000000",
+
+                  "-analyzeduration",
+                  "8000000",
+
+                  "-probesize",
+                  "5000000",
+
+                  "-show_entries",
+                  "stream=codec_type",
+
+                  "-of",
+                  "csv=p=0",
+
+                  url
+              ]
 
               for attempt in range(3):
 
-                  response = None
-
                   try:
 
-                      response = requests.get(
-                          url,
-                          headers=headers,
-                          stream=True,
-                          timeout=(10, 20),
-                          allow_redirects=True
+                      result = subprocess.run(
+                          command,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE,
+                          text=True,
+                          timeout=15
                       )
 
-                      status = response.status_code
+                      output = (
+                          result.stdout
+                          or ""
+                      ).lower()
 
-                      # Рабочий HTTP-ответ
-                      if 200 <= status < 300:
-                          response.close()
-                          return True, item
+                      error = (
+                          result.stderr
+                          or ""
+                      ).lower()
 
-                      # Редирект
-                      if 300 <= status < 400:
-                          response.close()
-                          return True, item
+                      # ------------------------------------------------
+                      # Настоящий поток найден
+                      # ------------------------------------------------
 
-                      # Временные / защитные ответы.
-                      # Не удаляем поток из-за них.
-                      if status in (
-                          401,
-                          403,
-                          408,
-                          425,
-                          429,
-                      ) or status >= 500:
-
-                          response.close()
-
-                          if attempt < 2:
-                              time.sleep(1.5)
-                              continue
-
-                          return True, item
-
-                      # Явно несуществующий поток
-                      if status in (
-                          400,
-                          404,
-                          410,
+                      if (
+                          result.returncode == 0
+                          and (
+                              "video" in output
+                              or "audio" in output
+                          )
                       ):
 
-                          response.close()
+                          return True, item
 
-                          if attempt < 2:
-                              time.sleep(1)
-                              continue
+                      # ------------------------------------------------
+                      # Некоторые IPTV-потоки возвращают данные,
+                      # но ffprobe завершается с предупреждением.
+                      #
+                      # Если в stderr явно видны признаки найденного
+                      # транспорта/потока — разрешаем.
+                      # ------------------------------------------------
 
-                          return False, item
+                      stream_signs = [
+                          "mpegts",
+                          "hls",
+                          "mpeg-2",
+                          "aac",
+                          "h264",
+                          "hevc",
+                          "avc",
+                          "mpeg4",
+                          "ac-3",
+                      ]
 
-                      response.close()
+                      if any(
+                          sign in error
+                          for sign in stream_signs
+                      ) and (
+                          "invalid data" not in error
+                          or "mpegts" in error
+                      ):
 
-                  except requests.exceptions.Timeout:
+                          if attempt == 2:
+                              return True, item
+
+                      time.sleep(1.5)
+
+                  except subprocess.TimeoutExpired:
 
                       if attempt < 2:
-                          time.sleep(1.5)
                           continue
-
-                      return True, item
-
-                  except requests.exceptions.ConnectionError:
-
-                      if attempt < 2:
-                          time.sleep(1.5)
-                          continue
-
-                      return True, item
 
                   except Exception:
 
                       if attempt < 2:
-                          time.sleep(1.5)
                           continue
 
-                      return True, item
+              return False, item
 
-                  finally:
-
-                      if response is not None:
-                          try:
-                              response.close()
-                          except Exception:
-                              pass
-
-              return True, item
 
           # ============================================================
-          # СКАЧИВАНИЕ И ОБРАБОТКА
+          # ЗАГРУЖАЕМ ИСТОЧНИКИ
           # ============================================================
 
           print("")
@@ -522,9 +604,11 @@ jobs:
               text = download_playlist(source)
 
               if not text:
+
                   print(
                       f"SOURCE FAILED: {source}"
                   )
+
                   continue
 
               entries = extract_entries(text)
@@ -538,59 +622,60 @@ jobs:
 
                   original_group = get_group(info)
 
-                  # -----------------------------------------------
-                  # Удаляем только согласованные группы
-                  # -----------------------------------------------
+                  # ----------------------------------------------------
+                  # Удаление
+                  # ----------------------------------------------------
 
                   if original_group in DELETE_GROUPS:
+
                       continue
 
-                  # -----------------------------------------------
-                  # Сначала применяем ручные правила группировки
-                  # -----------------------------------------------
+                  # ----------------------------------------------------
+                  # Странные технические группы
+                  # ----------------------------------------------------
 
-                  new_group = GROUP_MAP.get(
-                      original_group,
-                      original_group
-                  )
+                  if original_group in MISC_GROUPS:
 
-                  # -----------------------------------------------
-                  # Если группа отсутствует вообще
-                  # -----------------------------------------------
+                      new_group = "Разное"
+
+                  else:
+
+                      new_group = GROUP_MAP.get(
+                          original_group,
+                          original_group
+                      )
+
+                  # ----------------------------------------------------
+                  # Пустая группа
+                  # ----------------------------------------------------
 
                   if not new_group:
+
                       new_group = "Без категории"
 
-                  # -----------------------------------------------
-                  # Взрослые имеют приоритет
-                  # -----------------------------------------------
+                  # ----------------------------------------------------
+                  # Взрослые
+                  # ----------------------------------------------------
 
                   if is_adult(
                       info,
                       original_group
                   ):
+
                       new_group = "Взрослые"
 
-                  # -----------------------------------------------
-                  # Женские каналы
-                  #
-                  # Не переопределяем Взрослые.
-                  # -----------------------------------------------
-
-                  elif is_female(
-                      info,
-                      original_group
-                  ):
-                      new_group = "Женские"
+                  # ----------------------------------------------------
+                  # Устанавливаем группу
+                  # ----------------------------------------------------
 
                   info = set_group(
                       info,
                       new_group
                   )
 
-                  # -----------------------------------------------
-                  # ДУБЛИ НЕ УДАЛЯЕМ
-                  # -----------------------------------------------
+                  # ----------------------------------------------------
+                  # ДУБЛИКАТЫ НЕ УДАЛЯЕМ
+                  # ----------------------------------------------------
 
                   all_entries.append(
                       (
@@ -599,30 +684,41 @@ jobs:
                       )
                   )
 
+
           print("")
           print(
               f"TOTAL BEFORE CHECK: "
               f"{len(all_entries)}"
           )
 
+
           # ============================================================
-          # ПРОВЕРКА ПОТОКОВ
+          # ГЛУБОКАЯ ПРОВЕРКА
           # ============================================================
 
           print("")
           print("======================================")
-          print("FAST SMART STREAM CHECK")
+          print("REAL MEDIA STREAM CHECK")
           print("======================================")
 
           working = []
 
+          # 25 одновременных проверок.
+          #
+          # Это значительно безопаснее для источников,
+          # чем 50+ одновременных соединений.
+          #
+          # При этом процесс всё равно будет параллельным.
+
+          MAX_WORKERS = 25
+
           with ThreadPoolExecutor(
-              max_workers=50
+              max_workers=MAX_WORKERS
           ) as executor:
 
               futures = [
                   executor.submit(
-                      check_stream,
+                      probe_stream,
                       entry
                   )
                   for entry in all_entries
@@ -635,19 +731,27 @@ jobs:
                   1
               ):
 
-                  ok, entry = future.result()
+                  try:
 
-                  if ok:
-                      working.append(entry)
+                      ok, entry = future.result()
+
+                      if ok:
+
+                          working.append(entry)
+
+                  except Exception:
+
+                      pass
 
                   if number % 100 == 0:
 
                       print(
                           f"CHECKED: "
                           f"{number}/{total} | "
-                          f"KEPT: "
+                          f"WORKING: "
                           f"{len(working)}"
                       )
+
 
           print("")
           print(
@@ -655,69 +759,76 @@ jobs:
               f"{len(working)}"
           )
 
+
           # ============================================================
-          # ФИНАЛЬНЫЙ ПОРЯДОК ГРУПП
-          #
-          # Обычные группы идут выше.
-          #
-          # В самый низ:
-          # Взрослые
-          # Женские
-          # Индия
-          # Грузия
-          # Турция
-          # страны СНГ
+          # СОБИРАЕМ ГРУППЫ
           # ============================================================
 
-          BOTTOM_GROUPS = [
-              "Взрослые",
-              "Женские",
-              "Индия",
-              "Грузия",
-              "Турция",
-              "Азербайджан",
-              "Армения",
-              "Беларусь",
-              "Казахстан",
-              "Кыргызстан",
-              "Молдавия",
-              "Молдова",
-              "Таджикистан",
-              "Туркменистан",
-              "Украина",
-              "Узбекистан",
-          ]
+          grouped = {}
 
-          BOTTOM_RANK = {
-              group: index
-              for index, group in enumerate(
-                  BOTTOM_GROUPS
+          for info, url in working:
+
+              group = get_group(info)
+
+              if not group:
+
+                  group = "Без категории"
+
+              grouped.setdefault(
+                  group,
+                  []
+              ).append(
+                  (
+                      info,
+                      url
+                  )
               )
-          }
 
-          regular_entries = []
-          bottom_entries = []
 
-          for entry in working:
+          # ============================================================
+          # ФОРМИРУЕМ ФИНАЛЬНЫЙ ПОРЯДОК
+          # ============================================================
 
-              group = get_group(entry[0])
+          ordered_groups = []
 
-              if group in BOTTOM_RANK:
-                  bottom_entries.append(entry)
-              else:
-                  regular_entries.append(entry)
+          # Сначала группы из GROUP_ORDER
 
-          bottom_entries.sort(
-              key=lambda entry:
-                  BOTTOM_RANK[
-                      get_group(entry[0])
-                  ]
-          )
+          for group in GROUP_ORDER:
 
-          working = (
-              regular_entries
-              + bottom_entries
-          )
+              if group in grouped:
+
+                  ordered_groups.append(
+                      group
+                  )
+
+
+          # Затем любые новые неизвестные группы,
+          # чтобы ничего случайно не потерять.
+
+          for group in grouped:
+
+              if group not in ordered_groups:
+
+                  ordered_groups.append(
+                      group
+                  )
+
+
+          print("")
+          print("======================================")
+          print("FINAL GROUP ORDER")
+          print("======================================")
+
+
+          for number, group in enumerate(
+              ordered_groups,
+              1
+          ):
+
+              print(
+                  f"{number}. {group}"
+              )
+
 
           # ============================================================
           # СОХРАНЕНИЕ
@@ -729,49 +840,28 @@ jobs:
               encoding="utf-8"
           ) as file:
 
-              file.write("#EXTM3U\n")
+              file.write(
+                  "#EXTM3U\n"
+              )
 
-              for info, url in working:
+              for group in ordered_groups:
 
-                  file.write(
-                      info + "\n"
-                  )
+                  for info, url in grouped[group]:
 
-                  file.write(
-                      url + "\n"
-                  )
+                      file.write(
+                          info + "\n"
+                      )
+
+                      file.write(
+                          url + "\n"
+                      )
+
 
           print("")
           print(
               f"PLAYLIST CREATED: "
               f"{OUTPUT}"
           )
-
-          # ============================================================
-          # ПОКАЗЫВАЕМ ФИНАЛЬНЫЙ ПОРЯДОК
-          # ============================================================
-
-          print("")
-          print("======================================")
-          print("FINAL GROUP ORDER")
-          print("======================================")
-
-          seen_groups = []
-
-          for info, url in working:
-
-              group = get_group(info)
-
-              if group not in seen_groups:
-                  seen_groups.append(group)
-
-          for number, group in enumerate(
-              seen_groups,
-              1
-          ):
-              print(
-                  f"{number}. {group}"
-              )
 
           PY
 
@@ -789,6 +879,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No playlist changes."
           else
-            git commit -m "Update IPTV playlist"
+            git commit -m "Deep check IPTV streams and update playlist"
             git push
           fi
