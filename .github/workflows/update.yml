@@ -17,6 +17,10 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Нужна полная история, чтобы git pull --rebase мог корректно
+          # объединить изменения от параллельного обновления EPG.
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -880,7 +884,24 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No playlist changes."
-          else
-            git commit -m "Deep check IPTV streams and update playlist"
-            git push
+            exit 0
           fi
+
+          git commit -m "Deep check IPTV streams and update playlist"
+
+          # EPG может обновиться, пока идёт длительная проверка потоков.
+          # Перед push подтягиваем новый коммит и повторяем попытку при гонке.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+
+            if git push origin main; then
+              echo "Playlist successfully pushed."
+              exit 0
+            fi
+
+            echo "Push attempt ${attempt} failed; trying again..."
+            sleep 5
+          done
+
+          echo "Could not push playlist after 3 attempts."
+          exit 1
