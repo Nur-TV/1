@@ -3,7 +3,7 @@ name: Update lightweight EPG
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 3,15 * * *"
+    - cron: "30 4,16 * * *"
 
 permissions:
   contents: write
@@ -15,6 +15,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Полная история нужна для git pull --rebase при параллельном
+          # обновлении плейлиста.
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -1116,7 +1120,24 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No EPG changes."
-          else
-            git commit -m "Update combined lightweight EPG"
-            git push
+            exit 0
           fi
+
+          git commit -m "Update combined lightweight EPG"
+
+          # Плейлист и EPG могут обновляться одновременно.
+          # Подтягиваем свежий коммит и повторяем push при конфликте.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+
+            if git push origin main; then
+              echo "EPG successfully pushed."
+              exit 0
+            fi
+
+            echo "Push attempt ${attempt} failed; trying again..."
+            sleep 5
+          done
+
+          echo "Could not push EPG after 3 attempts."
+          exit 1
