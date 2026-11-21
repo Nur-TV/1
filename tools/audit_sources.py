@@ -22,6 +22,12 @@ SOURCES = [
  ("Axenov","https://iptv.axenov.dev/so"),
  ("Loganet","https://loganet.vercel.app/LoganetXStrawberry.m3u"),
 ]
+
+ADULT_SOURCES = [
+ ("Xteen18+TV","https://tinyurl.com/xteen18"),
+ ("Sexture18+TV","https://tinyurl.com/sexture18"),
+ ("Adultip18+TV","https://tinyurl.com/adultip18"),
+]
 VOD_GROUP=re.compile(r"(медиатек|кинозал|фильм|сериал|видео.?по.?запрос|vod|movies|series|films|cinema|kino.?zal|мультфильм.?онлайн)",re.I)
 VOD_NAME=re.compile(r"(смотреть онлайн|полная версия|фильм целиком|серия \d+|сезон \d+|мультфильм целиком|vod|movie on demand)",re.I)
 MEDIA_EXT=re.compile(r"\.(mp4|mkv|avi|mov|mp3|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)(?:$|[?#])",re.I)
@@ -65,8 +71,10 @@ def audit(item):
 def main():
  with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
   results=list(ex.map(audit,SOURCES))
+  adult_results=list(ex.map(audit,ADULT_SOURCES))
  total=sum(x[2] for x in results); errors=sum(bool(x[3]) for x in results)
- report=["# Nur-TV — аудит 16 общих источников","","Предварительный структурный аудит (автоматическая инвентаризация источников). Это НЕ проверка воспроизведения и НЕ автоматическое разрешение на импорт. Наличие .m3u8 само по себе не доказывает, что запись является линейным телеканалом.",f"- Источников: {len(SOURCES)}",f"- Успешно разобрано: {len(SOURCES)-errors}",f"- Ошибок загрузки/разбора: {errors}",f"- Всего записей EXTINF: {total}","", "\n\n".join(x[1] for x in results)]
+ adult_total=sum(x[2] for x in adult_results); adult_errors=sum(bool(x[3]) for x in adult_results)
+ report=["# Nur-TV — аудит источников IPTV","","Предварительный структурный аудит (автоматическая инвентаризация источников). Это НЕ проверка воспроизведения и НЕ автоматическое разрешение на импорт. Наличие .m3u8 само по себе не доказывает, что запись является линейным телеканалом.",f"- Общие источники: {len(SOURCES)}; успешно: {len(SOURCES)-errors}; ошибок: {errors}; записей EXTINF: {total}",f"- Источники 18+: {len(ADULT_SOURCES)}; успешно: {len(ADULT_SOURCES)-adult_errors}; ошибок: {adult_errors}; записей EXTINF: {adult_total}","", "## Общие источники", "\n\n".join(x[1] for x in results), "", "## Отдельная проверка 18+ (все записи при сборке должны попасть в одну группу «Взрослые»)", "\n\n".join(x[1] for x in adult_results)]
  with open("source-audit.md","w",encoding="utf-8") as f: f.write("\n".join(report)+"\n")
  print("\n".join(report))
 if __name__=="__main__": main()
