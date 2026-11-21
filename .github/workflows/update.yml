@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/update.yml'
+      - 'channel-logos.json'
 
   workflow_dispatch:
 
@@ -52,6 +53,7 @@ jobs:
 
           import os
           import re
+          import json
           import time
           import hashlib
           import unicodedata
@@ -380,6 +382,17 @@ jobs:
               comma = info.rfind(",")
               if comma >= 0:
                   return info[:comma] + f' tvg-id="{tvg_id}"' + info[comma:]
+              return info
+
+
+          def set_tvg_logo(info, logo):
+              if not logo:
+                  return info
+              if re.search(r'tvg-logo="[^"]*"', info, flags=re.IGNORECASE):
+                  return re.sub(r'tvg-logo="[^"]*"', lambda _: f'tvg-logo="{logo}"', info, count=1, flags=re.IGNORECASE)
+              comma = info.rfind(",")
+              if comma >= 0:
+                  return info[:comma] + f' tvg-logo="{logo}"' + info[comma:]
               return info
 
 
@@ -978,6 +991,23 @@ jobs:
 
 
           # ============================================================
+          # ЛОГОТИПЫ ИЗ СОБРАННОГО EPG
+          # ============================================================
+
+          logo_map = {}
+          if os.path.exists("channel-logos.json"):
+              try:
+                  with open("channel-logos.json", "r", encoding="utf-8") as logo_file:
+                      logo_map = json.load(logo_file)
+                  if not isinstance(logo_map, dict):
+                      logo_map = {}
+              except Exception as error:
+                  print(f"WARNING: cannot read channel-logos.json: {error}")
+                  logo_map = {}
+
+          logos_added = 0
+
+          # ============================================================
           # СОХРАНЕНИЕ
           # ============================================================
 
@@ -997,7 +1027,13 @@ jobs:
 
                       channel_name_match = re.search(r",(.+)$", info)
                       channel_name = channel_name_match.group(1).strip() if channel_name_match else info
-                      info = set_tvg_id(info, stable_tvg_id(channel_name))
+                      channel_id = stable_tvg_id(channel_name)
+                      info = set_tvg_id(info, channel_id)
+                      if not re.search(r'tvg-logo="[^"]+"', info, flags=re.IGNORECASE):
+                          logo = logo_map.get(channel_id, "")
+                          if logo:
+                              info = set_tvg_logo(info, logo)
+                              logos_added += 1
 
                       file.write(
                           info + "\n"
@@ -1013,6 +1049,7 @@ jobs:
               f"PLAYLIST CREATED: "
               f"{OUTPUT}"
           )
+          print(f"EPG logos applied to playlist: {logos_added}")
 
           PY
 
