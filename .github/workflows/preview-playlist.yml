@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'tools/build_playlist_preview.py'
+      - '.github/workflows/preview-playlist.yml'
   workflow_dispatch:
 
 permissions:
