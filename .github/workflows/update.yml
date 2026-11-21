@@ -1073,8 +1073,25 @@ jobs:
 
           git commit -m "Deep check IPTV streams and update playlist"
 
-          # Все workflow, записывающие файлы в main, используют общий
-          # concurrency group. Поэтому параллельных коммитов playlist.m3u
-          # и groups.txt быть не должно; конфликтующий rebase здесь не нужен.
-          git push origin main
-          echo "Playlist successfully pushed."
+          # Повторно синхронизируемся с main непосредственно перед публикацией.
+          # Это важно для старых уже запущенных сборок и изменений EPG,
+          # которые могли попасть в main во время длительной проверки потоков.
+          for attempt in 1 2 3; do
+            git fetch origin main
+
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                echo "Playlist successfully pushed."
+                exit 0
+              fi
+            else
+              echo "Rebase conflict on attempt ${attempt}; aborting rebase."
+              git rebase --abort || true
+            fi
+
+            echo "Publish attempt ${attempt} failed; retrying after refresh..."
+            sleep 5
+          done
+
+          echo "Could not publish playlist after 3 attempts."
+          exit 1
