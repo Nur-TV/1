@@ -159,6 +159,8 @@ def fetch_entries(name,url):
 
 def keep_entry(source,e):
     info=e["block"][0]; url=e["url"]; group=attr(info,"group-title")
+    if "," not in info or not info.rsplit(",",1)[-1].strip():
+        return False,"malformed_extinf"
     adult=is_adult(info,group,source)
     path=urlparse(url).path
     lower=(group+" "+info+" "+url).lower()
@@ -199,6 +201,19 @@ def main():
     global BASE_GROUPS
     BASE_GROUPS={attr(e["block"][0],"group-title") or "Без категории" for e in base_entries}
     logo_map=json.loads(LOGOS.read_text(encoding="utf-8"))
+    base_dropped=collections.Counter()
+    clean_base=[]
+    for e in base_entries:
+        url=e["url"]
+        if "127.0.0.1" in url.lower() or "localhost" in url.lower() or "/ace/getstream" in url.lower():
+            base_dropped["local_ace"]+=1
+        elif RESTRICTED.search(url):
+            base_dropped["restricted_credentials"]+=1
+        elif MEDIA_EXT.search(url):
+            base_dropped["direct_media_file"]+=1
+        else:
+            clean_base.append(e)
+    base_entries=clean_base
     grouped=collections.defaultdict(list)
     base_order=[]
     for e in base_entries:
@@ -268,7 +283,7 @@ def main():
       "",
       "Основа — восстановленный исходный плейлист. Альтернативные потоки и повторы намеренно сохранены; дедупликация не выполнялась.",
       "Исключались прямые файлы VOD, известные URL-пути медиатек, локальные AceStream-ссылки, явные тестовые/информационные записи и группы платных Wink/OTT Club. Это предварительная фильтрация, не подтверждение воспроизведения.",
-      f"- База: {len(base_entries)} записей",
+      f"- База после технической очистки: {len(base_entries)} записей (исходная копия: {len(base_entries)+sum(base_dropped.values())}; исключено: {sum(base_dropped.values())}; причины: "+(", ".join(f"{k}={v}" for k,v in base_dropped.items()) or "нет")+")",
       f"- Добавлено из источников: {imported}",
       f"- Всего в черновике: {total}",
       f"- Групп: {len(group_counts)}",
