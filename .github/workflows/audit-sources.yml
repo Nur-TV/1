@@ -4,8 +4,6 @@ on:
   push:
     paths:
       - 'tools/audit_sources.py'
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
