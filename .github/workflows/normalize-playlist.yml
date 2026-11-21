@@ -1,0 +1,53 @@
+name: Normalize baseline EPG IDs and logos
+
+on:
+  push:
+    paths:
+      - 'tools/normalize_playlist.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Normalize original baseline metadata
+        run: python tools/normalize_playlist.py
+      - name: Validate and publish metadata-only playlist update
+        run: |
+          set -e
+          test "$(grep -c '^#EXTINF:' playlist.m3u)" -eq 2976
+          git config user.name "IPTV Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add playlist.m3u
+          if git diff --cached --quiet; then
+            echo "Playlist metadata already normalized."
+            exit 0
+          fi
+          git commit -m "Align baseline playlist IDs and logos with EPG"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                echo "Metadata-only playlist update published."
+                exit 0
+              fi
+            else
+              git rebase --abort || true
+              echo "Rebase conflict on attempt ${attempt}; refusing to overwrite concurrent changes."
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Could not publish metadata-only update."
+          exit 1
