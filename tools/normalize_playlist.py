@@ -36,6 +36,7 @@ def set_attr(info, attr, value):
     return info
 
 def main():
+    # EPG IDs follow the exact canonical_id/norm rules from update-epg.yml.
     original = SOURCE.read_text(encoding="utf-8-sig")
     logo_map = json.loads(LOGOS.read_text(encoding="utf-8"))
     if not isinstance(logo_map, dict):
