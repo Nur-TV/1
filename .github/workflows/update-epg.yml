@@ -43,6 +43,7 @@ jobs:
           cat > build_epg.py <<'PY'
           import gzip
           import re
+          import json
           import hashlib
           import unicodedata
           import urllib.request
@@ -758,6 +759,7 @@ jobs:
 
 
           output_channels = {}
+          channel_logo_map = {}
 
 
           for number, channel in enumerate(
@@ -810,6 +812,9 @@ jobs:
                           "src": logo
                       }
                   )
+
+              if logo:
+                  channel_logo_map[output_id] = logo
 
               output_channels[
                   channel["norm"]
@@ -1094,6 +1099,11 @@ jobs:
               OUTPUT
           )
 
+          with open("channel-logos.json", "w", encoding="utf-8") as logo_file:
+              json.dump(channel_logo_map, logo_file, ensure_ascii=False, indent=2, sort_keys=True)
+              logo_file.write("\n")
+
+          print(f"Channel logos exported: {len(channel_logo_map)}")
 
           print(
               f"Output compressed size: "
@@ -1114,14 +1124,14 @@ jobs:
           git config user.name "IPTV Bot"
           git config user.email "actions@users.noreply.github.com"
 
-          git add epg.xml.gz
+          git add epg.xml.gz channel-logos.json
 
           if git diff --cached --quiet; then
             echo "No EPG changes."
             exit 0
           fi
 
-          git commit -m "Update combined lightweight EPG"
+          git commit -m "Update combined EPG and channel logos"
 
           # Плейлист и EPG могут обновляться одновременно.
           # Подтягиваем свежий коммит и повторяем push при конфликте.
