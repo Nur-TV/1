@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'tools/normalize_playlist.py'
+      - '.github/workflows/normalize-playlist.yml'
   workflow_dispatch:
 
 permissions:
