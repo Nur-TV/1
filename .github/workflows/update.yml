@@ -393,7 +393,6 @@ jobs:
 
               comma = info.find(",")
               name = info[comma + 1:].strip().lower() if comma >= 0 else info.lower()
-              text = name + " " + url.lower()
 
               technical_groups = {
                   "Разное", "Без категории", "",
@@ -407,21 +406,22 @@ jobs:
                   return group
 
               rules = [
-                  ("Новости", r"новост|известия|\brbc\b|\brt\b|россия\s*24|мир\s*24|euronews|bbc|cnn|news"),
+                  ("Новости", r"новост|известия|\brbc\b|\brt\b|россия\s*24|мир\s*24|euronews|bbc|cnn|cnbc|news\s*live|тасс|соловьев|первый информац|осн|инфо\s*24"),
                   ("Спорт", r"sport|спорт|eurosport|матч|football|футбол|fifa|ufc|boxing|бокс|теннис|fight"),
-                  ("Детские", r"мульт|cartoon|kids|disney|nickelodeon|карусел|детск|baby|gulli|аниме|союзмульт"),
-                  ("Музыкальные", r"music|музык|mtv|ru\.tv|bridge|музтв|шансон|шлягер|retro.?music|muz|hit.?tv"),
-                  ("Кино и сериалы", r"кино|film|movie|serial|сериал|фильм|cinema|viju|vip.?serial|kinomix|кинопоказ|mosfilm|дом.?кино|еврокино|кинокомед|кинопрем|киносвид|киносем|кинохит"),
+                  ("Детские", r"мульт|cartoon|kids|disney|nickelodeon|\bnick\b|карусел|детск|baby|gulli|аниме|animax|союзмульт"),
+                  ("Музыкальные", r"music|музык|mtv|ru\.tv|bridge|музтв|шансон|шлягер|retro.?music|muz|hit.?tv|tmtv"),
+                  ("Кино и сериалы", r"кино|film|movie|serial|сериал|фильм|cinema|viju|vip.?serial|kinomix|кинопоказ|mosfilm|дом.?кино|еврокино|кинокомед|кинопрем|киносвид|киносем|кинохит|кинопанорам"),
                   ("Познавательные", r"наука|планета|animal|discovery|history|nat.?geo|national.?geographic|travel|познав|история|охота|рыбалка|географ|животн|wild"),
                   ("Религиозные", r"спас|союз|церков|православ|религи|благовест|три.?ангела|радость.?моя|angel"),
-                  ("Развлекательные", r"развлек|пятниц|суббота|домашний|супер|\bче\b|\bю\b|sts|тнт|тв3|2x2|перец|сарафан|стс|комеди|юмор"),
+                  ("Развлекательные", r"развлек|пятниц|суббота|домашний|супер|\bче\b|\bю\b|sts|тнт|тв3|2x2|перец|сарафан|стс|комеди|юмор|про бизнес"),
+                  ("Региональные", r"\b24\b|губерн|городск|област|край|регион|репортер|репортёр|барс|вектор|ветта|телевидение|телеканал|град|местный|псков|астрахан|краснодар|сургут|катунь|мордов|лен тв|север|белгород|брянск|кубань|кузбасс|енисей|крик|рифей|столица|доверие|волгоград|камчат|дагестан|осетия|магас|саха|губерния"),
               ]
 
               for target, pattern in rules:
-                  if re.search(pattern, text, flags=re.IGNORECASE):
+                  if re.search(pattern, name, flags=re.IGNORECASE):
                       return target
 
-              if re.search(r"radio|радио", text, flags=re.IGNORECASE):
+              if re.search(r"radio|радио", name, flags=re.IGNORECASE):
                   return "Радио"
 
               return "Разное"
