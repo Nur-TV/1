@@ -363,35 +363,67 @@ jobs:
           # ============================================================
 
           def is_recording(info, url, group):
+
+              # Все записи вне 18+ исключаем. Линейные телеканалы
+              # с фильмами, мультфильмами и музыкой остаются.
               if is_adult(info, group):
                   return False
+
               path = url.split("?", 1)[0].lower()
-              return bool(re.search(r"\\.(mp4|mkv|avi|mov|mp3|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)$", path))
+              return bool(re.search(
+                  r"\.(mp4|mkv|avi|mov|mp3|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)$",
+                  path
+              ))
+
+
+          def is_restricted_stream(url):
+
+              # Явные DRM/учётные данные не включаем в бесплатный M3U.
+              return bool(re.search(
+                  r"(?:mdrm|access_token=|username=|password=|(?:[?&])cid=|(?:[?&])did=)",
+                  url,
+                  flags=re.IGNORECASE
+              ))
 
 
           def classify_channel(info, group, url):
+
               if is_adult(info, group):
                   return "Взрослые"
+
               comma = info.find(",")
               name = info[comma + 1:].strip().lower() if comma >= 0 else info.lower()
               text = name + " " + url.lower()
-              if group not in {"Разное", "Без категории", "", "Turon Media (VPN)", "Datacamp Limited", "Велком", "LLC G&G-Telecom", "Наш Нет 🇺🇦", "Оргтехсервис (VPN)", "Uplink (VPN)", "Кинозалы 🍿 (VPN)", "Сити Эдем"}:
+
+              technical_groups = {
+                  "Разное", "Без категории", "",
+                  "Turon Media (VPN)", "Datacamp Limited",
+                  "Велком", "LLC G&G-Telecom", "Наш Нет 🇺🇦",
+                  "Оргтехсервис (VPN)", "Uplink (VPN)",
+                  "Кинозалы 🍿 (VPN)", "Сити Эдем"
+              }
+
+              if group not in technical_groups:
                   return group
+
               rules = [
-                  ("Новости", r"новост|известия|\\brbc\\b|\\brt\\b|россия\\s*24|мир\\s*24|euronews|bbc|cnn|news"),
+                  ("Новости", r"новост|известия|\brbc\b|\brt\b|россия\s*24|мир\s*24|euronews|bbc|cnn|news"),
                   ("Спорт", r"sport|спорт|eurosport|матч|football|футбол|fifa|ufc|boxing|бокс|теннис|fight"),
                   ("Детские", r"мульт|cartoon|kids|disney|nickelodeon|карусел|детск|baby|gulli|аниме|союзмульт"),
-                  ("Музыкальные", r"music|музык|mtv|ru\\.tv|bridge|музтв|шансон|шлягер|retro.?music|muz|hit.?tv"),
+                  ("Музыкальные", r"music|музык|mtv|ru\.tv|bridge|музтв|шансон|шлягер|retro.?music|muz|hit.?tv"),
                   ("Кино и сериалы", r"кино|film|movie|serial|сериал|фильм|cinema|viju|vip.?serial|kinomix|кинопоказ|mosfilm|дом.?кино|еврокино|кинокомед|кинопрем|киносвид|киносем|кинохит"),
                   ("Познавательные", r"наука|планета|animal|discovery|history|nat.?geo|national.?geographic|travel|познав|история|охота|рыбалка|географ|животн|wild"),
                   ("Религиозные", r"спас|союз|церков|православ|религи|благовест|три.?ангела|радость.?моя|angel"),
-                  ("Развлекательные", r"развлек|пятниц|суббота|домашний|супер|\\bче\\b|\\bю\\b|sts|тнт|тв3|2x2|перец|сарафан|стс|комеди|юмор"),
+                  ("Развлекательные", r"развлек|пятниц|суббота|домашний|супер|\bче\b|\bю\b|sts|тнт|тв3|2x2|перец|сарафан|стс|комеди|юмор"),
               ]
+
               for target, pattern in rules:
                   if re.search(pattern, text, flags=re.IGNORECASE):
                       return target
+
               if re.search(r"radio|радио", text, flags=re.IGNORECASE):
                   return "Радио"
+
               return "Разное"
 
 
@@ -567,11 +599,6 @@ jobs:
                           or ""
                       ).lower()
 
-                      error = (
-                          result.stderr
-                          or ""
-                      ).lower()
-
                       # ------------------------------------------------
                       # Настоящий поток найден
                       # ------------------------------------------------
@@ -637,7 +664,7 @@ jobs:
 
                   # Удаляем только отдельные файлы с записями. Линейные
                   # кино-, детские и музыкальные телеканалы сохраняются.
-                  if is_recording(info, url, original_group):
+                  if is_recording(info, url, original_group) or is_restricted_stream(url):
                       continue
 
                   # ----------------------------------------------------
