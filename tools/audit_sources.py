@@ -51,8 +51,13 @@ def audit(item):
   gc=collections.Counter(x[0] for x in entries)
   ex=collections.Counter(urlparse(x[2]).path.rsplit(".",1)[-1].lower() if "." in urlparse(x[2]).path.rsplit("/",1)[-1] else "(none)" for x in entries)
   bad=[x for x in entries if x[3]]
-  out=[f"## {name}",f"- HTTP: {r.status_code}; конечный URL: {r.url}",f"- Прочитано байт (лимит 30 MiB): {min(len(r.content),30*1024*1024)}",f"- Записей EXTINF: {len(entries)}",f"- Групп: {len(gc)}","- Расширения: "+", ".join(f"{k}={v}" for k,v in ex.most_common(12)),"- Группы: "+"; ".join(f"{k} ({v})" for k,v in gc.most_common(35)),f"- Подозрительные VOD/файловые записи: {len(bad)}"]
-  for g,t,u,f in bad[:35]: out.append(f"  - [{'+'.join(f)}] {g} | {t} | {u[:200]}")
+  flagged=collections.defaultdict(list)
+  for item in bad: flagged[item[0]].append(item)
+  out=[f"## {name}",f"- HTTP: {r.status_code}; конечный URL: {r.url}",f"- Прочитано байт (лимит 30 MiB): {min(len(r.content),30*1024*1024)}",f"- Записей EXTINF: {len(entries)}",f"- Групп: {len(gc)}","- Расширения: "+", ".join(f"{k}={v}" for k,v in ex.most_common(12)),"- Группы: "+"; ".join(f"{k} ({v})" for k,v in gc.most_common(35)),f"- Пометки VOD/файловых записей (нужна ручная проверка, это не автоудаление): {len(bad)}"]
+  for group, items in sorted(flagged.items(), key=lambda kv:(-len(kv[1]),kv[0]))[:30]:
+   out.append(f"  - Группа «{group}»: {len(items)} пометок")
+   for g,t,u,flags in items[:5]:
+    out.append(f"    - [{'+'.join(flags)}] {t} | {u[:180]}")
   return name,"\n".join(out),len(entries),None
  except Exception as e:
   return name,f"## {name}\n- ОШИБКА: {type(e).__name__}: {e}",0,str(e)
