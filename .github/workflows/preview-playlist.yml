@@ -13,6 +13,7 @@ permissions:
 jobs:
   preview:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -24,12 +25,20 @@ jobs:
         run: python -m pip install requests
       - name: Build candidate preview only
         run: python tools/build_playlist_preview.py
-      - name: Upload preview and report
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Probe each unique stream once
+        run: python tools/probe_playlist_preview.py
+      - name: Upload preview, probe results and report
         uses: actions/upload-artifact@v4
         with:
           name: nur-tv-playlist-candidate-preview
           path: |
             playlist-preview.m3u
             preview-report.md
+            probe-report.md
+            probe-results.csv
           if-no-files-found: error
           retention-days: 7
