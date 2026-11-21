@@ -12,8 +12,10 @@ on:
     - cron: "0 3,15 * * *"
 
 concurrency:
-  group: update-iptv-playlist
-  cancel-in-progress: true
+  # Один общий замок для всех workflow, которые записывают файлы в main.
+  # Не отменяем активную сборку: следующий запуск ждёт своей очереди.
+  group: nurtv-main-publish
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -1071,19 +1073,8 @@ jobs:
 
           git commit -m "Deep check IPTV streams and update playlist"
 
-          # EPG может обновиться, пока идёт длительная проверка потоков.
-          # Перед push подтягиваем новый коммит и повторяем попытку при гонке.
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-
-            if git push origin main; then
-              echo "Playlist successfully pushed."
-              exit 0
-            fi
-
-            echo "Push attempt ${attempt} failed; trying again..."
-            sleep 5
-          done
-
-          echo "Could not push playlist after 3 attempts."
-          exit 1
+          # Все workflow, записывающие файлы в main, используют общий
+          # concurrency group. Поэтому параллельных коммитов playlist.m3u
+          # и groups.txt быть не должно; конфликтующий rebase здесь не нужен.
+          git push origin main
+          echo "Playlist successfully pushed."
