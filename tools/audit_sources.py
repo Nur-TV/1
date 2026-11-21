@@ -61,7 +61,7 @@ def main():
  with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
   results=list(ex.map(audit,SOURCES))
  total=sum(x[2] for x in results); errors=sum(bool(x[3]) for x in results)
- report=["# Nur-TV — аудит 16 общих источников","","Предварительный структурный аудит. Это НЕ проверка воспроизведения и НЕ автоматическое разрешение на импорт. Наличие .m3u8 само по себе не доказывает, что запись является линейным телеканалом.",f"- Источников: {len(SOURCES)}",f"- Успешно разобрано: {len(SOURCES)-errors}",f"- Ошибок загрузки/разбора: {errors}",f"- Всего записей EXTINF: {total}","", "\n\n".join(x[1] for x in results)]
+ report=["# Nur-TV — аудит 16 общих источников","","Предварительный структурный аудит (автоматическая инвентаризация источников). Это НЕ проверка воспроизведения и НЕ автоматическое разрешение на импорт. Наличие .m3u8 само по себе не доказывает, что запись является линейным телеканалом.",f"- Источников: {len(SOURCES)}",f"- Успешно разобрано: {len(SOURCES)-errors}",f"- Ошибок загрузки/разбора: {errors}",f"- Всего записей EXTINF: {total}","", "\n\n".join(x[1] for x in results)]
  with open("source-audit.md","w",encoding="utf-8") as f: f.write("\n".join(report)+"\n")
  print("\n".join(report))
 if __name__=="__main__": main()
