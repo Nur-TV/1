@@ -34,6 +34,7 @@ ADULT = [
 BASE = Path("playlist.m3u")
 LOGOS = Path("channel-logos.json")
 OUT = Path("playlist-preview.m3u")
+BASE_GROUPS = set()
 REPORT = Path("preview-report.md")
 
 REMOVE_WORDS={"hd","fhd","uhd","4k","8k","sd","hdtv","tv","телеканал","канал","channel","online","онлайн","live","лайв"}
@@ -154,7 +155,7 @@ def keep_entry(source,e):
         return False,"zuno_movie_library"
     if source=="Sexture18+TV" and norm(group)!="взрослые":
         return False,"adult_vod_group"
-    if source=="Adultip18+TV" and norm(group)!="tv каналы":
+    if source=="Adultip18+TV" and norm(group)!="каналы":
         return False,"adult_vod_group"
     # Adult sources Xteen contains only channel entries; the two mixed sources
     # are restricted to the explicit TV-channel groups above.
@@ -165,6 +166,8 @@ def main():
     base_lines=base_text.splitlines()
     header=next((x for x in base_lines if x.startswith("#EXTM3U")),'#EXTM3U url-tvg="https://nur-tv.github.io/1/epg.xml.gz"')
     base_entries=parse_m3u(base_text)
+    global BASE_GROUPS
+    BASE_GROUPS={attr(e["block"][0],"group-title") or "Без категории" for e in base_entries}
     logo_map=json.loads(LOGOS.read_text(encoding="utf-8"))
     grouped=collections.defaultdict(list)
     base_order=[]
