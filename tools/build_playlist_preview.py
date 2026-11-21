@@ -86,14 +86,40 @@ def parse_m3u(text):
 def is_adult(info,group,source):
     return source in {x[0] for x in ADULT} or bool(ADULT_WORDS.search(info+" "+group))
 
-def map_group(group,name,adult):
+def map_group(group,name,adult,source):
     if adult: return "Взрослые"
     g=(group or "").strip()
-    if g in BASE_GROUPS: return g
+    if source=="ZabavaTV":
+        return "Федеральные" if norm(g)=="основные" else "Региональные"
+    if source=="TivinorTV" and norm(g)=="вещание":
+        return "Эфирные"
+    if source=="TivinorTV" and norm(g)=="шоу":
+        return "Развлекательные"
+    if g in BASE_GROUPS and g not in {"Разное","Без категории"}: return g
     x=norm(g)
-    if any(k in x for k in ["беларус","казахстан","узбекистан","азербайджан","армения","грузия","кыргызстан","молдав","таджикистан","туркменистан","турция","индия"]):
-        for country in ["Беларусь","Казахстан","Узбекистан","Азербайджан","Армения","Грузия","Кыргызстан","Молдавия","Таджикистан","Туркменистан","Турция","Индия"]:
-            if norm(country) in x: return country
+    country_aliases = {
+      "беларусь":"Беларусь","казахстан":"Казахстан","узбекистан":"Узбекистан",
+      "азербайджан":"Азербайджан","армения":"Армения","грузия":"Грузия",
+      "кыргызстан":"Кыргызстан","кыргыз":"Кыргызстан","молдавия":"Молдавия","молдова":"Молдавия",
+      "таджикистан":"Таджикистан","туркменистан":"Туркменистан","турция":"Турция","индия":"Индия",
+      "сша":"США","германия":"Германия","италия":"Италия","испания":"Испания","франция":"Франция",
+      "польша":"Польша","нидерланды":"Нидерланды","австралия":"Австралия","австрия":"Австрия",
+      "болгария":"Болгария","бразилия":"Бразилия","великобритания":"Великобритания","венгрия":"Венгрия",
+      "греция":"Греция","израиль":"Израиль","иран":"Иран","канада":"Канада","мексика":"Мексика",
+      "португалия":"Португалия","румыния":"Румыния","сербия":"Сербия","словакия":"Словакия",
+      "хорватия":"Хорватия","чехия":"Чехия","латвия":"Латвия","литва":"Литва","эстония":"Эстония",
+      "украина":"Украина","аргентина":"Аргентина","албания":"Албания","африка":"Африка",
+      "арабские":"Арабские","азия":"Азия","латинская америка":"Латинская Америка",
+      "остальная европа":"Остальная Европа"
+    }
+    for alias,target in country_aliases.items():
+        if alias in x: return target
+    if re.search(r"арабск",x): return "Арабские"
+    if re.search(r"латинск.*америк",x): return "Латинская Америка"
+    if re.search(r"остальн.*европ",x): return "Остальная Европа"
+    if re.search(r"вещан|эфир",x): return "Эфирные"
+    if re.search(r"шоу|плюсов",x): return "Развлекательные"
+    if re.search(r"российск",x): return "Федеральные"
     if re.search(r"радио|radio",x): return "Радио"
     if re.search(r"федерал|общероссий|основные|эфир ru",x): return "Федеральные"
     if re.search(r"эфир|broadcast",x): return "Эфирные"
@@ -120,6 +146,7 @@ def map_group(group,name,adult):
       ("Религиозные",r"спас|союз|церков|православ"),
       ("Развлекательные",r"развлек|тнт|стс|пятниц|домашний|комеди|юмор"),
       ("Региональные",r"губерн|городск|област|регион|телеканал|телевидение|край"),
+      ("Федеральные",r"первый канал|россия 1|россия 24|нтв|рен тв|пятый канал|тв центр|звезда"),
     ]
     for target,pattern in rules:
         if re.search(pattern,n,re.I): return target
@@ -151,6 +178,8 @@ def keep_entry(source,e):
         return False,"paid_provider_group"
     if source=="KinomixTV" and norm(group) in {"фильмы","мультфильмы"}:
         return False,"kinomix_on_demand_group"
+    if source=="VeronaTV" and "iptvplay" in group.lower():
+        return False,"iptvplay_on_demand_group"
     if source=="ZunoTV" and re.search(r"кино уз party",norm(group)):
         return False,"zuno_movie_library"
     if source=="Sexture18+TV" and norm(group)!="взрослые":
@@ -193,7 +222,7 @@ def main():
             info=e["block"][0]
             name=info.rsplit(",",1)[-1].strip()
             adult=is_adult(info,attr(info,"group-title"),source)
-            group=map_group(attr(info,"group-title"),name,adult)
+            group=map_group(attr(info,"group-title"),name,adult,source)
             info=set_attr(info,"group-title",group)
             cid=channel_id(name)
             info=set_attr(info,"tvg-id",cid)
@@ -206,8 +235,22 @@ def main():
         source_stats.append((source,len(entries),kept,sum(dropped.values()),""))
         report.append(f"### {source}\n- Получено: {len(entries)}; добавлено в черновик: {kept}; исключено: {sum(dropped.values())}\n- Причины исключения: "+(", ".join(f"{k}={v}" for k,v in dropped.most_common()) or "нет")+"\n- Группы добавленных записей: "+(", ".join(f"{k}={v}" for k,v in added_groups.most_common()) or "нет"))
     # Keep the original baseline group sequence first, then any new canonical groups.
-    order=base_order[:]
-    for g in grouped:
+    preferred_order = [
+      "Федеральные","Развлекательные","Кино и сериалы","Детские","Музыкальные","Спорт",
+      "Познавательные","Новости","Региональные","Эфирные","Религиозные","Общественные",
+      "Мужские","Досуг","Культура","Христианские","Хобби и увлечения","Медитативные","Радио",
+      "Беларусь","Казахстан","Узбекистан","Азербайджан","Армения","Грузия","Кыргызстан",
+      "Молдавия","Таджикистан","Туркменистан","Турция","Индия","Австралия","Австрия","Азия",
+      "Албания","Арабские","Аргентина","Африка","Болгария","Бразилия","Великобритания",
+      "Венгрия","Германия","Греция","Израиль","Иран","Испания","Италия","Канада",
+      "Латинская Америка","Мексика","Нидерланды","Остальная Европа","Польша","Португалия",
+      "Румыния","Сербия","Словакия","США","Франция","Хорватия","Чехия","Латвия","Литва",
+      "Эстония","Украина","Литва","Разное","Без категории","Взрослые"
+    ]
+    order=[g for g in preferred_order if g in grouped]
+    for g in base_order:
+        if g in grouped and g not in order: order.append(g)
+    for g in sorted(grouped):
         if g not in order: order.append(g)
     lines=[header]
     group_counts={}
