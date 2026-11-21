@@ -55,11 +55,27 @@ jobs:
           # ============================================================
 
           SOURCES = [
-              "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
+              # Основные бесплатные/публичные телевизионные подборки.
+              "https://raw.githubusercontent.com/UFOTVM/TV/refs/heads/main/ufo.m3u",
               "https://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV",
+              "https://bit.ly/Endik1",
+              "https://tinyurl.com/KinomixTV",
+              "https://bit.ly/vivamax-m3u",
+              "https://tinyurl.com/shamsiptv",
+              "https://raw.githubusercontent.com/Tivinor/tivinor/refs/heads/main/tivinor.m3u",
+              "https://raw.githubusercontent.com/MaxTVNew01/Maxtvvhs/refs/heads/main/LICENSE.m3u",
+              "https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/TV",
+              "https://raw.githubusercontent.com/Dolov07KBR/DF_IPTV/refs/heads/main/07.m3u",
               "https://spirt007.github.io/Tvru/Rus.m3u",
+              "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
+              "https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u",
               "https://iptv.axenov.dev/so",
               "https://loganet.vercel.app/LoganetXStrawberry.m3u",
+
+              # 18+ — отдельная единая группа; записи там разрешены.
+              "https://tinyurl.com/xteen18",
+              "https://tinyurl.com/sexture18",
+              "https://tinyurl.com/adultip18",
           ]
 
           OUTPUT = "playlist.m3u"
@@ -70,72 +86,19 @@ jobs:
           # ============================================================
 
           DELETE_GROUPS = {
-              "4K VIDEO (VPN)",
-
               "Catcast TV 🐈 Not 24/7",
-
-              "Австралия",
-              "Австрия",
-              "Азия",
-              "Албания",
-              "Арабские",
-              "Аргентина",
-              "АСАРТА (🇷🇺VPN)",
-              "Африка",
-
-              "Болгария",
-              "Бразилия",
-              "Великобритания",
-              "Венгрия",
-              "Германия",
-              "Греция",
-
-              "Израиль",
-
-              "ИНФО",
-              "Информационные",
-              "Иран",
-              "Испания",
-              "Италия",
-
-              "Канада",
-              "Латинская Америка",
-              "Мексика",
-              "Мода",
-
-
-              "Нидерланды",
-
-              "Оргтехсервис (VPN 🇷🇺)",
-
-              "Остальная Европа",
-
               "ПОДАРОК премиальный плейлист",
-
-              "Польша",
-              "Португалия",
-
-
-              "Румыния",
-              "Сербия",
-              "Словакия",
-              "США",
-
               "Тех поддержка",
-
-              "Франция",
-              "Хорватия",
-
-              "🔺 INFO 🔺",
-
               "TEST (VPN)",
               "TEST ⓵",
-
-              "Чехия",
-              "НТВ",
-              "Твоё ТВ",
+              "🔺 INFO 🔺",
+              "ИНФО",
           }
 
+
+          # ============================================================
+          # ОБЪЕДИНЕНИЕ ГРУПП
+          # ============================================================
 
           # ============================================================
           # ОБЪЕДИНЕНИЕ ГРУПП
@@ -248,41 +211,69 @@ jobs:
               "Детские",
               "Музыкальные",
               "Спорт",
-              "Религиозные",
-              "Эфирные",
               "Познавательные",
-              "Региональные",
               "Новости",
               "Региональные",
               "Эфирные",
-              "Радио",
-              "Разное",
-              "Мужские",
-              "Без категории",
+              "Религиозные",
               "Общественные",
-              "Будущее",
+              "Мужские",
               "Досуг",
               "Культура",
               "Христианские",
               "Хобби и увлечения",
               "Медитативные",
-              "Взрослые",
-              "Индия",
-              "Грузия",
-              "Турция",
-              "Азербайджан",
-              "Армения",
+              "Радио",
               "Беларусь",
               "Казахстан",
+              "Узбекистан",
+              "Азербайджан",
+              "Армения",
+              "Грузия",
               "Кыргызстан",
               "Молдавия",
               "Таджикистан",
               "Туркменистан",
-              "Узбекистан",
-              "Turon Media (VPN)",
+              "Турция",
+              "Индия",
+              "Австралия",
+              "Австрия",
+              "Азия",
+              "Албания",
+              "Арабские",
+              "Аргентина",
+              "Африка",
+              "Болгария",
+              "Бразилия",
+              "Великобритания",
+              "Венгрия",
+              "Германия",
+              "Греция",
+              "Израиль",
+              "Иран",
+              "Испания",
+              "Италия",
+              "Канада",
+              "Латинская Америка",
+              "Мексика",
+              "Нидерланды",
+              "Остальная Европа",
+              "Польша",
+              "Португалия",
+              "Румыния",
+              "Сербия",
+              "Словакия",
+              "США",
+              "Франция",
+              "Хорватия",
+              "Чехия",
+              "Разное",
+              "Без категории",
+              "Взрослые",
           ]
 
 
+          # ============================================================
           # ============================================================
           # ОЧЕВИДНЫЕ ВЗРОСЛЫЕ КАНАЛЫ
           # ============================================================
@@ -301,6 +292,10 @@ jobs:
               "dorcel",
               "private",
               "passion xxx",
+              "18+",
+              "xteen",
+              "sexture",
+              "adultip",
               "порно",
               "эрот",
               "порн",
@@ -450,6 +445,7 @@ jobs:
                       if (
                           response.status_code == 200
                           and len(response.text) > 20
+                          and "#EXTINF" in response.text
                       ):
 
                           print(
@@ -735,6 +731,9 @@ jobs:
                   )
 
 
+          if not all_entries:
+              raise RuntimeError("No IPTV entries downloaded; refusing to overwrite playlist.")
+
           print("")
           print(
               f"TOTAL BEFORE CHECK: "
@@ -802,6 +801,9 @@ jobs:
                           f"{len(working)}"
                       )
 
+
+          if not working:
+              raise RuntimeError("No playable streams passed ffprobe; refusing to overwrite playlist.")
 
           print("")
           print(
