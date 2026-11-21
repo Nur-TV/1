@@ -80,6 +80,12 @@ jobs:
 
           OUTPUT = "playlist.m3u"
 
+          ADULT_SOURCES = {
+              "https://tinyurl.com/xteen18",
+              "https://tinyurl.com/sexture18",
+              "https://tinyurl.com/adultip18",
+          }
+
 
           # ============================================================
           # ГРУППЫ, КОТОРЫЕ УДАЛЯЕМ
@@ -289,6 +295,7 @@ jobs:
               "private",
               "passion xxx",
               "18+",
+              "взросл",
               "xteen",
               "sexture",
               "adultip",
@@ -330,10 +337,17 @@ jobs:
                       flags=re.IGNORECASE
                   )
 
+              comma = info.find(",")
+              if comma >= 0:
+                  return info[:comma] + f' group-title="{group}"' + info[comma:]
+
               return info
 
 
           def is_adult(info, group):
+
+              if group.strip().lower() in {"взрослые", "эротика", "18+"}:
+                  return True
 
               text = (
                   info
@@ -648,6 +662,8 @@ jobs:
               for info, url in entries:
 
                   original_group = get_group(info)
+                  if source in ADULT_SOURCES:
+                      original_group = "Взрослые"
 
                   # Удаляем только отдельные файлы с записями. Линейные
                   # кино-, детские и музыкальные телеканалы сохраняются.
