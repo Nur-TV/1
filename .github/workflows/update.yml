@@ -46,6 +46,7 @@ jobs:
         run: |
           cat > build_playlist.py <<'PY'
 
+          import os
           import re
           import time
           import subprocess
@@ -644,6 +645,34 @@ jobs:
           print("======================================")
 
           all_entries = []
+
+          # Базу всегда берём из неизменяемой резервной копии исходного
+          # основного плейлиста. Так существующие каналы не теряются,
+          # а уже импортированные внешние источники не дублируются
+          # повторно при каждом плановом запуске.
+          BASE_PLAYLIST = "backups/playlist-original-2026-11-21.m3u"
+
+          if not os.path.exists(BASE_PLAYLIST):
+              raise RuntimeError(
+                  f"Base playlist not found: {BASE_PLAYLIST}; refusing to replace playlist."
+              )
+
+          with open(BASE_PLAYLIST, "r", encoding="utf-8-sig") as base_file:
+              base_text = base_file.read()
+
+          base_entries = extract_entries(base_text)
+
+          for info, url in base_entries:
+              original_group = get_group(info)
+
+              if is_recording(info, url, original_group) or is_restricted_stream(url):
+                  continue
+
+              new_group = classify_channel(info, original_group, url)
+              info = set_group(info, new_group)
+              all_entries.append((info, url))
+
+          print(f"BASE PLAYLIST: {len(base_entries)} entries; retained {len(all_entries)}")
 
           for source in SOURCES:
 
