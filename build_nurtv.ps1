@@ -5,6 +5,7 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Apktool = Join-Path $Root 'apktool_3.0.3.jar'
 $OriginalApk = Join-Path $Root 'dTelevizo.apk'
 $Signed = Join-Path $Root 'Televizo_NurTV.apk'
+$NewSigned = Join-Path $Root 'Televizo_NurTV.new.apk'
 $Unsigned = Join-Path $Root 'Televizo_NurTV_unsigned.apk'
 $Aligned = Join-Path $Root 'Televizo_NurTV_aligned.apk'
 $Keystore = Join-Path $Root 'nurtv-release.keystore'
@@ -37,7 +38,7 @@ Write-Host ("Java: {0}" -f $JavaExe)
 & $JavaExe -jar $Apktool --version
 if($LASTEXITCODE -ne 0){Fail 'Apktool did not start.'}
 
-foreach($p in @($Project,$Unsigned,$Aligned,$Signed,$Res1Zip,$Res1Work,$Res1New,$M3U)){if(Test-Path -LiteralPath $p){Remove-Item -LiteralPath $p -Recurse -Force}}
+foreach($p in @($Project,$Unsigned,$Aligned,$NewSigned,$Res1Zip,$Res1Work,$Res1New,$M3U)){if(Test-Path -LiteralPath $p){Remove-Item -LiteralPath $p -Recurse -Force}}
 
 Write-Host ''
 Write-Host '1/6  DECODING dTelevizo.apk'
@@ -79,7 +80,7 @@ public static class WinSQLite {
         try {
             byte[] b=Encoding.UTF8.GetBytes(sql+"\0");
             IntPtr p=Marshal.AllocHGlobal(b.Length); Marshal.Copy(b,0,p,b.Length);
-            try { IntPtr err; rc=sqlite3_exec(db,p,IntPtr.Zero,IntPtr.Zero,out err); if(rc!=0){string msg=err!=IntPtr.Zero?Marshal.PtrToStringUni(err):"unknown SQLite error"; if(err!=IntPtr.Zero)sqlite3_free(err); throw new Exception("sqlite3_exec failed: "+rc+" "+msg);}} finally {Marshal.FreeHGlobal(p);}
+            try { IntPtr err; rc=sqlite3_exec(db,p,IntPtr.Zero,IntPtr.Zero,out err); if(rc!=0){string msg=err!=IntPtr.Zero?Marshal.PtrToStringAnsi(err):"unknown SQLite error"; if(err!=IntPtr.Zero)sqlite3_free(err); throw new Exception("sqlite3_exec failed: "+rc+" "+msg);}} finally {Marshal.FreeHGlobal(p);}
         } finally {sqlite3_close(db);}
     }
 }
@@ -111,7 +112,7 @@ foreach($x in $items){if(!$groups.ContainsKey($x.Group)){$groups[$x.Group]=$gid;
 foreach($k in $groups.Keys){$cnt=($items|Where-Object Group -eq $k).Count;$sql += " UPDATE groups SET channel_count=$cnt WHERE id=$($groups[$k]);"}
 $n=1
 foreach($x in $items){
-    $gjson='["'+$x.Group.Replace('"','\"').Replace('\','\\')+'"]'
+    $gjson='["'+$x.Group.Replace('\','\\').Replace('"','\"')+'"]'
     $sql += " INSERT INTO channels(playlist_id,identity,number,group_number,name,item_type,shift,source,image,playlist_user_agent,http_referer,catchup_days,catchup_type,catchup_source,playlist_name,playlist_source,playlist_xc_timezone,group_name,group_names_found_for_channel,xc_series_id,xc_vod_id,xc_last_modified,xc_rating_5based,xc_rating) VALUES(1,"+(SqlQ $x.Identity)+",$n,0,"+(SqlQ $x.Name)+",0,0,"+(SqlQ $x.Url)+","+(SqlQ $x.Logo)+",'','',0,0,'','Nur-TV','https://nur-tv.github.io/1/playlist.m3u','',"+(SqlQ $x.Group)+","+(SqlQ $gjson)+",0,0,'',0.0,'');"
     $n++
 }
@@ -174,11 +175,13 @@ foreach($sdk in ($sdkCandidates|Where-Object{$_}|Select-Object -Unique)){$bt=Joi
 Write-Host ''
 Write-Host '5/6  SIGNING APK'
 if(!(Test-Path -LiteralPath $Keystore)){& keytool -genkeypair -v -keystore $Keystore -alias nurtv -keyalg RSA -keysize 2048 -validity 10000 -storepass nurtv123 -keypass nurtv123 -dname 'CN=Nur-TV, OU=Nur-TV, O=Nur-TV, C=RU';if($LASTEXITCODE -ne 0){Fail 'Could not create signing key.'}}
-if($zipalign -and $apksigner){& $zipalign -f -p 4 $Unsigned $Aligned;if($LASTEXITCODE -ne 0){Fail 'zipalign failed.'};& $apksigner sign --ks $Keystore --ks-key-alias nurtv --ks-pass pass:nurtv123 --key-pass pass:nurtv123 --out $Signed $Aligned;if($LASTEXITCODE -ne 0){Fail 'apksigner failed.'}}else{& jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $Keystore -storepass nurtv123 -keypass nurtv123 -signedjar $Signed $Unsigned nurtv;if($LASTEXITCODE -ne 0){Fail 'jarsigner failed.'}}
+if($zipalign -and $apksigner){& $zipalign -f -p 4 $Unsigned $Aligned;if($LASTEXITCODE -ne 0){Fail 'zipalign failed.'};& $apksigner sign --ks $Keystore --ks-key-alias nurtv --ks-pass pass:nurtv123 --key-pass pass:nurtv123 --out $NewSigned $Aligned;if($LASTEXITCODE -ne 0){Fail 'apksigner failed.'}}else{& jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $Keystore -storepass nurtv123 -keypass nurtv123 -signedjar $NewSigned $Unsigned nurtv;if($LASTEXITCODE -ne 0){Fail 'jarsigner failed.'}}
 
 Write-Host ''
 Write-Host '6/6  VERIFYING APK'
-if($apksigner){& $apksigner verify --verbose $Signed;if($LASTEXITCODE -ne 0){Fail 'Final APK signature verification failed.'}}
+if($apksigner){& $apksigner verify --verbose $NewSigned;if($LASTEXITCODE -ne 0){Fail 'Final APK signature verification failed.'}}else{& jarsigner -verify -verbose $NewSigned;if($LASTEXITCODE -ne 0){Fail 'Final APK signature verification failed.'}}
+Move-Item -LiteralPath $NewSigned -Destination $Signed -Force
+
 Write-Host ''
 Write-Host '============================================================'
 Write-Host '                         SUCCESS'
