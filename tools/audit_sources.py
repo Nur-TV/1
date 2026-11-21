@@ -32,22 +32,22 @@ def audit(item):
   r=requests.get(url,timeout=(15,60),headers={"User-Agent":"NurTV-Source-Audit/1.0"})
   r.raise_for_status()
   data=r.content[:30*1024*1024].decode("utf-8-sig",errors="replace")
-  lines=data.splitlines(); entries=[]
-  for i,line in enumerate(lines):
-   if not line.lstrip().startswith("#EXTINF"): continue
-   info=line.strip(); stream=""
-   for c in lines[i+1:]:
-    c=c.strip()
-    if c and not c.startswith("#"): stream=c; break
-   if not stream: continue
-   m=re.search(r'group-title="([^"]*)"',info,re.I)
-   group=m.group(1).strip() if m else "(без группы)"
-   title=info.rsplit(",",1)[-1].strip()
-   flags=[]
-   if VOD_GROUP.search(group): flags.append("VOD_GROUP")
-   if VOD_NAME.search(title): flags.append("VOD_NAME")
-   if MEDIA_EXT.search(stream): flags.append("MEDIA_FILE_EXT")
-   entries.append((group,title,stream,flags))
+  entries=[]; pending=None
+  for line in data.splitlines():
+   line=line.strip()
+   if not line: continue
+   if line.startswith("#EXTINF"):
+    pending=line
+   elif pending and not line.startswith("#"):
+    info=pending; stream=line; pending=None
+    m=re.search(r'group-title="([^"]*)"',info,re.I)
+    group=m.group(1).strip() if m else "(без группы)"
+    title=info.rsplit(",",1)[-1].strip()
+    flags=[]
+    if VOD_GROUP.search(group): flags.append("VOD_GROUP")
+    if VOD_NAME.search(title): flags.append("VOD_NAME")
+    if MEDIA_EXT.search(stream): flags.append("MEDIA_FILE_EXT")
+    entries.append((group,title,stream,flags))
   gc=collections.Counter(x[0] for x in entries)
   ex=collections.Counter(urlparse(x[2]).path.rsplit(".",1)[-1].lower() if "." in urlparse(x[2]).path.rsplit("/",1)[-1] else "(none)" for x in entries)
   bad=[x for x in entries if x[3]]
