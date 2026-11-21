@@ -162,6 +162,7 @@ def keep_entry(source,e):
     return True,"adult_channel" if adult else "kept"
 
 def main():
+    # Preview only: no publication and no URL deduplication.
     base_text=BASE.read_text(encoding="utf-8-sig")
     base_lines=base_text.splitlines()
     header=next((x for x in base_lines if x.startswith("#EXTM3U")),'#EXTM3U url-tvg="https://nur-tv.github.io/1/epg.xml.gz"')
