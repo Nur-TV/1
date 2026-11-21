@@ -10,8 +10,9 @@ on:
     - cron: "30 4,16 * * *"
 
 concurrency:
-  group: update-epg
-  cancel-in-progress: true
+  # Общий замок с Update IPTV playlist: оба workflow меняют main.
+  group: nurtv-main-publish
+  cancel-in-progress: false
 
 permissions:
   contents: write
