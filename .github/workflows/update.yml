@@ -66,6 +66,7 @@ jobs:
               "https://raw.githubusercontent.com/MaxTVNew01/Maxtvvhs/refs/heads/main/LICENSE.m3u",
               "https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/TV",
               "https://raw.githubusercontent.com/Dolov07KBR/DF_IPTV/refs/heads/main/07.m3u",
+              "https://raw.githubusercontent.com/premiumtvam/sp.server.ru/refs/heads/main/README.md", # MainTV: по факту отдаёт M3U
               "https://spirt007.github.io/Tvru/Rus.m3u",
               "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
               "https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u",
