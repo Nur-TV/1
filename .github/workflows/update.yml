@@ -55,14 +55,36 @@ jobs:
           # ============================================================
 
           SOURCES = [
-              "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
+              # Основные бесплатные/публичные телевизионные подборки.
+              "https://raw.githubusercontent.com/UFOTVM/TV/refs/heads/main/ufo.m3u",
               "https://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV",
+              "https://bit.ly/Endik1",
+              "https://tinyurl.com/KinomixTV",
+              "https://bit.ly/vivamax-m3u",
+              "https://tinyurl.com/shamsiptv",
+              "https://raw.githubusercontent.com/Tivinor/tivinor/refs/heads/main/tivinor.m3u",
+              "https://raw.githubusercontent.com/MaxTVNew01/Maxtvvhs/refs/heads/main/LICENSE.m3u",
+              "https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/TV",
+              "https://raw.githubusercontent.com/Dolov07KBR/DF_IPTV/refs/heads/main/07.m3u",
               "https://spirt007.github.io/Tvru/Rus.m3u",
+              "https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u",
+              "https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u",
               "https://iptv.axenov.dev/so",
               "https://loganet.vercel.app/LoganetXStrawberry.m3u",
+
+              # 18+ — отдельная единая группа; записи там разрешены.
+              "https://tinyurl.com/xteen18",
+              "https://tinyurl.com/sexture18",
+              "https://tinyurl.com/adultip18",
           ]
 
           OUTPUT = "playlist.m3u"
+
+          ADULT_SOURCES = {
+              "https://tinyurl.com/xteen18",
+              "https://tinyurl.com/sexture18",
+              "https://tinyurl.com/adultip18",
+          }
 
 
           # ============================================================
@@ -70,73 +92,13 @@ jobs:
           # ============================================================
 
           DELETE_GROUPS = {
-              "4K VIDEO (VPN)",
-
               "Catcast TV 🐈 Not 24/7",
-
-              "Австралия",
-              "Австрия",
-              "Азия",
-              "Албания",
-              "Арабские",
-              "Аргентина",
-              "АСАРТА (🇷🇺VPN)",
-              "Африка",
-
-              "Болгария",
-              "Бразилия",
-              "Великобритания",
-              "Венгрия",
-              "Германия",
-              "Греция",
-
-              "Израиль",
-
-              "ИНФО",
-              "Информационные",
-              "Иран",
-              "Испания",
-              "Италия",
-
-              "Канада",
-              "Латинская Америка",
-              "Мексика",
-              "Мода",
-
-              "Музыкальные",
-              "Музыкальные 🎶",
-
-              "Нидерланды",
-
-              "Оргтехсервис (VPN 🇷🇺)",
-
-              "Остальная Европа",
-
               "ПОДАРОК премиальный плейлист",
-
-              "Польша",
-              "Португалия",
-
-              "Радио",
-
-              "Румыния",
-              "Сербия",
-              "Словакия",
-              "США",
-
               "Тех поддержка",
-
-              "Франция",
-              "Хорватия",
-
-              "🔺 INFO 🔺",
-
               "TEST (VPN)",
               "TEST ⓵",
-
-              "Чехия",
-              "НТВ",
-              "Твоё ТВ",
+              "🔺 INFO 🔺",
+              "ИНФО",
           }
 
 
@@ -155,6 +117,7 @@ jobs:
               "Премьеры и хиты": "Кино и сериалы",
               "Сериалы НТВ": "Кино и сериалы",
               "Фильмы и сериалы": "Кино и сериалы",
+              "Музыкальные 🎶": "Музыкальные",
 
               # СПОРТ
               "Спортивные": "Спорт",
@@ -244,43 +207,75 @@ jobs:
           # ============================================================
 
           GROUP_ORDER = [
-              "Кино и сериалы",
               "Федеральные",
               "Развлекательные",
-              "Спорт",
+              "Кино и сериалы",
               "Детские",
-              "Религиозные",
-              "Эфирные",
+              "Музыкальные",
+              "Спорт",
               "Познавательные",
-              "Региональные",
               "Новости",
-              "Разное",
-              "Мужские",
-              "Без категории",
+              "Региональные",
+              "Эфирные",
+              "Религиозные",
               "Общественные",
-              "Будущее",
+              "Мужские",
               "Досуг",
               "Культура",
               "Христианские",
               "Хобби и увлечения",
               "Медитативные",
-              "Взрослые",
-              "Индия",
-              "Грузия",
-              "Турция",
-              "Азербайджан",
-              "Армения",
+              "Радио",
               "Беларусь",
               "Казахстан",
+              "Узбекистан",
+              "Азербайджан",
+              "Армения",
+              "Грузия",
               "Кыргызстан",
               "Молдавия",
               "Таджикистан",
               "Туркменистан",
-              "Узбекистан",
-              "Turon Media (VPN)",
+              "Турция",
+              "Индия",
+              "Австралия",
+              "Австрия",
+              "Азия",
+              "Албания",
+              "Арабские",
+              "Аргентина",
+              "Африка",
+              "Болгария",
+              "Бразилия",
+              "Великобритания",
+              "Венгрия",
+              "Германия",
+              "Греция",
+              "Израиль",
+              "Иран",
+              "Испания",
+              "Италия",
+              "Канада",
+              "Латинская Америка",
+              "Мексика",
+              "Нидерланды",
+              "Остальная Европа",
+              "Польша",
+              "Португалия",
+              "Румыния",
+              "Сербия",
+              "Словакия",
+              "США",
+              "Франция",
+              "Хорватия",
+              "Чехия",
+              "Разное",
+              "Без категории",
+              "Взрослые",
           ]
 
 
+          # ============================================================
           # ============================================================
           # ОЧЕВИДНЫЕ ВЗРОСЛЫЕ КАНАЛЫ
           # ============================================================
@@ -299,6 +294,11 @@ jobs:
               "dorcel",
               "private",
               "passion xxx",
+              "18+",
+              "взросл",
+              "xteen",
+              "sexture",
+              "adultip",
               "порно",
               "эрот",
               "порн",
@@ -337,10 +337,17 @@ jobs:
                       flags=re.IGNORECASE
                   )
 
+              comma = info.find(",")
+              if comma >= 0:
+                  return info[:comma] + f' group-title="{group}"' + info[comma:]
+
               return info
 
 
           def is_adult(info, group):
+
+              if group.strip().lower() in {"взрослые", "эротика", "18+"}:
+                  return True
 
               text = (
                   info
@@ -352,6 +359,77 @@ jobs:
                   word in text
                   for word in ADULT_WORDS
               )
+
+
+
+
+          # ============================================================
+          # ОТДЕЛЬНЫЕ ФАЙЛЫ / ЗАПИСИ, А НЕ ЛИНЕЙНЫЕ КАНАЛЫ
+          # ============================================================
+
+          def is_recording(info, url, group):
+
+              # Все записи вне 18+ исключаем. Линейные телеканалы
+              # с фильмами, мультфильмами и музыкой остаются.
+              if is_adult(info, group):
+                  return False
+
+              path = url.split("?", 1)[0].lower()
+              return bool(re.search(
+                  r"\.(mp4|mkv|avi|mov|mp3|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)$",
+                  path
+              ))
+
+
+          def is_restricted_stream(url):
+
+              # Явные DRM/учётные данные не включаем в бесплатный M3U.
+              return bool(re.search(
+                  r"(?:mdrm|access_token=|username=|password=|(?:[?&])cid=|(?:[?&])did=)",
+                  url,
+                  flags=re.IGNORECASE
+              ))
+
+
+          def classify_channel(info, group, url):
+
+              if is_adult(info, group):
+                  return "Взрослые"
+
+              comma = info.find(",")
+              name = info[comma + 1:].strip().lower() if comma >= 0 else info.lower()
+
+              technical_groups = {
+                  "Разное", "Без категории", "",
+                  "Turon Media (VPN)", "Datacamp Limited",
+                  "Велком", "LLC G&G-Telecom", "Наш Нет 🇺🇦",
+                  "Оргтехсервис (VPN)", "Uplink (VPN)",
+                  "Кинозалы 🍿 (VPN)", "Сити Эдем"
+              }
+
+              if group not in technical_groups:
+                  return group
+
+              rules = [
+                  ("Новости", r"новост|известия|\brbc\b|\brt\b|россия\s*24|мир\s*24|euronews|bbc|cnn|cnbc|news\s*live|тасс|соловьев|первый информац|осн|инфо\s*24"),
+                  ("Спорт", r"sport|спорт|eurosport|матч|football|футбол|fifa|ufc|boxing|бокс|теннис|fight"),
+                  ("Детские", r"мульт|cartoon|kids|disney|nickelodeon|\bnick\b|карусел|детск|baby|gulli|аниме|animax|союзмульт"),
+                  ("Музыкальные", r"music|музык|mtv|ru\.tv|bridge|музтв|шансон|шлягер|retro.?music|muz|hit.?tv|tmtv"),
+                  ("Кино и сериалы", r"кино|film|movie|serial|сериал|фильм|cinema|viju|vip.?serial|kinomix|кинопоказ|mosfilm|дом.?кино|еврокино|кинокомед|кинопрем|киносвид|киносем|кинохит|кинопанорам"),
+                  ("Познавательные", r"наука|планета|animal|discovery|history|nat.?geo|national.?geographic|travel|познав|история|охота|рыбалка|географ|животн|wild"),
+                  ("Религиозные", r"спас|союз|церков|православ|религи|благовест|три.?ангела|радость.?моя|angel"),
+                  ("Развлекательные", r"развлек|пятниц|суббота|домашний|супер|\bче\b|\bю\b|sts|тнт|тв3|2x2|перец|сарафан|стс|комеди|юмор|про бизнес"),
+                  ("Региональные", r"\b24\b|губерн|городск|област|край|регион|репортер|репортёр|барс|вектор|ветта|телевидение|телеканал|град|местный|псков|астрахан|краснодар|сургут|катунь|мордов|лен тв|север|белгород|брянск|кубань|кузбасс|енисей|крик|рифей|столица|доверие|волгоград|камчат|дагестан|осетия|магас|саха|губерния"),
+              ]
+
+              for target, pattern in rules:
+                  if re.search(pattern, name, flags=re.IGNORECASE):
+                      return target
+
+              if re.search(r"radio|радио", name, flags=re.IGNORECASE):
+                  return "Радио"
+
+              return "Разное"
 
 
           # ============================================================
@@ -377,6 +455,7 @@ jobs:
                       if (
                           response.status_code == 200
                           and len(response.text) > 20
+                          and "#EXTINF" in response.text
                       ):
 
                           print(
@@ -475,11 +554,6 @@ jobs:
 
               info, url = item
 
-              headers = (
-                  "User-Agent: VLC/3.0.20\r\n"
-                  "Accept: */*\r\n"
-              )
-
               command = [
                   "ffprobe",
 
@@ -492,9 +566,6 @@ jobs:
                   "VLC/3.0.20",
 
                   "-rw_timeout",
-                  "10000000",
-
-                  "-timeout",
                   "10000000",
 
                   "-analyzeduration",
@@ -529,11 +600,6 @@ jobs:
                           or ""
                       ).lower()
 
-                      error = (
-                          result.stderr
-                          or ""
-                      ).lower()
-
                       # ------------------------------------------------
                       # Настоящий поток найден
                       # ------------------------------------------------
@@ -547,37 +613,6 @@ jobs:
                       ):
 
                           return True, item
-
-                      # ------------------------------------------------
-                      # Некоторые IPTV-потоки возвращают данные,
-                      # но ffprobe завершается с предупреждением.
-                      #
-                      # Если в stderr явно видны признаки найденного
-                      # транспорта/потока — разрешаем.
-                      # ------------------------------------------------
-
-                      stream_signs = [
-                          "mpegts",
-                          "hls",
-                          "mpeg-2",
-                          "aac",
-                          "h264",
-                          "hevc",
-                          "avc",
-                          "mpeg4",
-                          "ac-3",
-                      ]
-
-                      if any(
-                          sign in error
-                          for sign in stream_signs
-                      ) and (
-                          "invalid data" not in error
-                          or "mpegts" in error
-                      ):
-
-                          if attempt == 2:
-                              return True, item
 
                       time.sleep(1.5)
 
@@ -627,6 +662,13 @@ jobs:
               for info, url in entries:
 
                   original_group = get_group(info)
+                  if source in ADULT_SOURCES:
+                      original_group = "Взрослые"
+
+                  # Удаляем только отдельные файлы с записями. Линейные
+                  # кино-, детские и музыкальные телеканалы сохраняются.
+                  if is_recording(info, url, original_group) or is_restricted_stream(url):
+                      continue
 
                   # ----------------------------------------------------
                   # Удаление
@@ -671,6 +713,11 @@ jobs:
                       new_group = "Взрослые"
 
                   # ----------------------------------------------------
+                  # Раскладываем каналы из технических групп по тематике
+                  # ----------------------------------------------------
+                  new_group = classify_channel(info, new_group, url)
+
+                  # ----------------------------------------------------
                   # Устанавливаем группу
                   # ----------------------------------------------------
 
@@ -690,6 +737,9 @@ jobs:
                       )
                   )
 
+
+          if not all_entries:
+              raise RuntimeError("No IPTV entries downloaded; refusing to overwrite playlist.")
 
           print("")
           print(
@@ -758,6 +808,9 @@ jobs:
                           f"{len(working)}"
                       )
 
+
+          if not working:
+              raise RuntimeError("No playable streams passed ffprobe; refusing to overwrite playlist.")
 
           print("")
           print(
@@ -837,6 +890,27 @@ jobs:
 
 
           # ============================================================
+          # СОХРАНЕНИЕ СПИСКА ГРУПП
+          # ============================================================
+
+          with open(
+              "groups.txt",
+              "w",
+              encoding="utf-8"
+          ) as file:
+
+              file.write("NUR-TV — СПИСОК ГРУПП IPTV\n")
+              file.write("================================\n")
+              file.write(f"Всего каналов: {len(working)}\n")
+              file.write(f"Всего групп: {len(ordered_groups)}\n\n")
+
+              for number, group in enumerate(ordered_groups, 1):
+                  file.write(
+                      f"{number}. {group} — {len(grouped[group])} каналов\n"
+                  )
+
+
+          # ============================================================
           # СОХРАНЕНИЕ
           # ============================================================
 
@@ -880,7 +954,7 @@ jobs:
           git config user.name "IPTV Bot"
           git config user.email "actions@users.noreply.github.com"
 
-          git add playlist.m3u
+          git add playlist.m3u groups.txt
 
           if git diff --cached --quiet; then
             echo "No playlist changes."
