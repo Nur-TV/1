@@ -1,9 +1,17 @@
 name: Update lightweight EPG
 
 on:
+  push:
+    paths:
+      - 'playlist.m3u'
+      - '.github/workflows/update-epg.yml'
   workflow_dispatch:
   schedule:
     - cron: "30 4,16 * * *"
+
+concurrency:
+  group: update-epg
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -35,6 +43,7 @@ jobs:
           cat > build_epg.py <<'PY'
           import gzip
           import re
+          import hashlib
           import unicodedata
           import urllib.request
           import xml.etree.ElementTree as ET
@@ -48,6 +57,8 @@ jobs:
               ("IPTVX_FULL", "https://iptvx.one/EPG"),
               ("IPTVX_GZ", "https://iptvx.one/epg/epg.xml.gz"),
               ("EDEM", "http://epg.it999.ru/edem.xml.gz"),
+              ("TELEGUIDE", "https://www.teleguide.info/download/new3/xmltv.xml.gz"),
+              ("IPTV_EPG_RU", "https://iptv-epg.org/files/epg-ru.xml"),
           ]
 
           OUTPUT = "epg.xml.gz"
@@ -56,8 +67,8 @@ jobs:
           # НАСТРОЙКИ
           # ============================================================
 
-          DAYS_BACK = 3
-          DAYS_FORWARD = 1
+          DAYS_BACK = 1
+          DAYS_FORWARD = 7
 
           # Минимальный процент похожести названий.
           # Более высокие значения защищают от ошибочных совпадений.
@@ -138,6 +149,14 @@ jobs:
                   words.append(word)
 
               return " ".join(words).strip()
+
+
+          def canonical_id(name):
+              normalized = norm(name)
+              if not normalized:
+                  normalized = (name or "unknown").strip().lower()
+              digest = hashlib.sha1(normalized.encode("utf-8")).hexdigest()[:16]
+              return f"nurtv-{digest}"
 
 
           def compact_norm(text):
@@ -293,19 +312,12 @@ jobs:
 
           for channel in playlist_entries:
 
-              if channel["tvg_id"]:
-
-                  key = (
-                      "id:",
-                      channel["tvg_id"].lower()
-                  )
-
-              else:
-
-                  key = (
-                      "name:",
-                      channel["norm"]
-                  )
+              # Все потоки одного канала, включая запасные URL и HD/SD-варианты,
+              # получают один стабильный ID по нормализованному названию.
+              key = (
+                  "name:",
+                  channel["norm"]
+              )
 
               if key not in unique_channels:
 
@@ -753,16 +765,7 @@ jobs:
               1
           ):
 
-              output_id = (
-                  channel["tvg_id"]
-                  or f"nurtv-{number}"
-              )
-
-              output_id = re.sub(
-                  r"[^A-Za-z0-9_.:-]",
-                  "_",
-                  output_id
-              )
+              output_id = canonical_id(channel["name"])
 
               out_channel = ET.SubElement(
                   output_root,
@@ -841,6 +844,22 @@ jobs:
           )
 
 
+          def parse_xmltv_time(value):
+              match = re.match(r"^(\d{14})(?:\s*([+-])(\d{2})(\d{2})|Z)?", value or "")
+              if not match:
+                  raise ValueError(f"Invalid XMLTV time: {value}")
+              parsed = datetime.strptime(match.group(1), "%Y%m%d%H%M%S")
+              sign, hours, minutes = match.group(2), match.group(3), match.group(4)
+              if sign and hours and minutes:
+                  offset = timedelta(hours=int(hours), minutes=int(minutes))
+                  if sign == "-":
+                      offset = -offset
+                  parsed = parsed.replace(tzinfo=timezone(offset))
+              else:
+                  parsed = parsed.replace(tzinfo=timezone.utc)
+              return parsed.astimezone(timezone.utc)
+
+
           # ============================================================
           # ПРОГРАММЫ
           #
@@ -884,37 +903,16 @@ jobs:
                       continue
 
                   try:
-
-                      start_dt = datetime.strptime(
-                          start_text[:14],
-                          "%Y%m%d%H%M%S"
-                      ).replace(
-                          tzinfo=timezone.utc
-                      )
-
+                      start_dt = parse_xmltv_time(start_text)
                   except Exception:
-
                       continue
 
                   if stop_text:
 
                       try:
-
-                          stop_dt = datetime.strptime(
-                              stop_text[:14],
-                              "%Y%m%d%H%M%S"
-                          ).replace(
-                              tzinfo=timezone.utc
-                          )
-
+                          stop_dt = parse_xmltv_time(stop_text)
                       except Exception:
-
-                          stop_dt = (
-                              start_dt
-                              + timedelta(
-                                  hours=1
-                              )
-                          )
+                          stop_dt = start_dt + timedelta(hours=1)
 
                   else:
 
