@@ -100,10 +100,6 @@ jobs:
           # ОБЪЕДИНЕНИЕ ГРУПП
           # ============================================================
 
-          # ============================================================
-          # ОБЪЕДИНЕНИЕ ГРУПП
-          # ============================================================
-
           GROUP_MAP = {
 
               # КИНО
@@ -544,11 +540,6 @@ jobs:
 
               info, url = item
 
-              headers = (
-                  "User-Agent: VLC/3.0.20\r\n"
-                  "Accept: */*\r\n"
-              )
-
               command = [
                   "ffprobe",
 
@@ -883,6 +874,27 @@ jobs:
 
 
           # ============================================================
+          # СОХРАНЕНИЕ СПИСКА ГРУПП
+          # ============================================================
+
+          with open(
+              "groups.txt",
+              "w",
+              encoding="utf-8"
+          ) as file:
+
+              file.write("NUR-TV — СПИСОК ГРУПП IPTV\n")
+              file.write("================================\n")
+              file.write(f"Всего каналов: {len(working)}\n")
+              file.write(f"Всего групп: {len(ordered_groups)}\n\n")
+
+              for number, group in enumerate(ordered_groups, 1):
+                  file.write(
+                      f"{number}. {group} — {len(grouped[group])} каналов\n"
+                  )
+
+
+          # ============================================================
           # СОХРАНЕНИЕ
           # ============================================================
 
@@ -926,7 +938,7 @@ jobs:
           git config user.name "IPTV Bot"
           git config user.email "actions@users.noreply.github.com"
 
-          git add playlist.m3u
+          git add playlist.m3u groups.txt
 
           if git diff --cached --quiet; then
             echo "No playlist changes."
