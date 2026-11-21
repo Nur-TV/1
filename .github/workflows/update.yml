@@ -11,12 +11,6 @@ on:
   schedule:
     - cron: "0 3,15 * * *"
 
-concurrency:
-  # Один общий замок для всех workflow, которые записывают файлы в main.
-  # Не отменяем активную сборку: следующий запуск ждёт своей очереди.
-  group: nurtv-main-publish
-  cancel-in-progress: false
-
 permissions:
   contents: write
 
