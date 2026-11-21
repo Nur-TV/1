@@ -1,0 +1,31 @@
+name: Audit IPTV source playlists
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install requests
+        run: python -m pip install requests
+      - name: Audit sources (read-only)
+        run: python tools/audit_sources.py
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nur-tv-source-audit
+          path: source-audit.md
+          if-no-files-found: error
+          retention-days: 7
