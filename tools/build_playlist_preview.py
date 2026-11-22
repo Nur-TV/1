@@ -1,10 +1,12 @@
+import base64
 import collections
 import hashlib
 import json
 import re
+import time
 import unicodedata
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import requests
 
@@ -40,11 +42,11 @@ REPORT = Path("preview-report.md")
 REMOVE_WORDS={"hd","fhd","uhd","4k","8k","sd","hdtv","tv","телеканал","канал","channel","online","онлайн","live","лайв"}
 MEDIA_EXT=re.compile(r"\.(mp4|mkv|avi|mov|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)(?:$|[?#])",re.I)
 RADIO_EXT=re.compile(r"\.(mp3|aacp?)(?:$|[?#])",re.I)
-RESTRICTED=re.compile(r"(?:mdrm|access_token=|username=|password=|(?:[?&])cid=|(?:[?&])did=)",re.I)
+RESTRICTED=re.compile(r"(?:mdrm|drmreq=|access_token=|username=|password=|(?:[?&])cid=|(?:[?&])did=|(?:[?&])mac=|(?:[?&])play_token=)",re.I)
 ADULT_WORDS=re.compile(r"(?:18\+|xxx|porn|porno|erotic|erotica|playboy|penthouse|brazzers|hustler|dorcel|adult|взросл|эрот|порно|порн)",re.I)
 BAD_GROUP=re.compile(r"(?:\btest\b|тест|🔺\s*info|тех\s*поддерж|поддержать|premium playlist|премиальный плейлист|not\s*24/7|no\s*24/7|не\s*24/7|catcast.*not\s*24/7)",re.I)
 PAID_GROUP=re.compile(r"(?:\bwink\b|ott\s*club)",re.I)
-VOD_PATH=re.compile(r"/(?:hls/)?(?:film|films|movie|movies|serials|series|multfilm)(?:/|$)",re.I)
+VOD_PATH=re.compile(r"/(?:hls/)?(?:film|films|movie|movies|serials|series|multfilm)(?:/|$)|/(?:play/)?(?:movie|series)\\.php(?:$|[?])",re.I)
 
 def norm(value):
     value=unicodedata.normalize("NFKC",value or "").lower().replace("ё","е")
@@ -68,6 +70,38 @@ def set_attr(info,key,value):
         return re.sub(pat,lambda _:repl,info,count=1,flags=re.I)
     comma=info.rfind(",")
     return info[:comma]+" "+repl+info[comma:] if comma>=0 else info
+
+def token_restriction(url):
+    parsed=urlparse(url)
+    query=parse_qs(parsed.query)
+    if any(key.lower() in {"mac","play_token"} for key in query):
+        return "restricted_credentials"
+    if any(value.lower() in {"movie","series"} for value in query.get("type",[])):
+        return "vod_api_endpoint"
+    expiry=re.search(r"/e/(\\d{10})/",parsed.path)
+    if expiry and int(expiry.group(1)) < int(time.time())-60:
+        return "expired_access_token"
+    for values in query.values():
+        for token in values:
+            parts=token.split(".")
+            if len(parts)!=3:
+                continue
+            try:
+                payload=parts[1]+"="*((4-len(parts[1])%4)%4)
+                claims=json.loads(base64.urlsafe_b64decode(payload))
+            except Exception:
+                continue
+            if "exp" in claims:
+                try:
+                    if int(claims["exp"]) < int(time.time())-60:
+                        return "expired_access_token"
+                except (TypeError,ValueError):
+                    pass
+            if claims.get("ip") or ("login" in claims and "contract_id" in claims):
+                return "restricted_credentials"
+            if claims.get("aud")=="access" and "cid" in claims and "uid" in claims:
+                return "restricted_credentials"
+    return ""
 
 def parse_m3u(text):
     entries=[]; pending=None
@@ -168,6 +202,9 @@ def keep_entry(source,e):
         return False,"local_ace"
     if RESTRICTED.search(url):
         return False,"restricted_credentials"
+    token_reason=token_restriction(url)
+    if token_reason:
+        return False,token_reason
     if MEDIA_EXT.search(path) or MEDIA_EXT.search(url):
         return False,"direct_media_file"
     if RADIO_EXT.search(url) and not re.search(r"радио|radio",group+" "+info,re.I):
@@ -209,6 +246,8 @@ def main():
             base_dropped["local_ace"]+=1
         elif RESTRICTED.search(url):
             base_dropped["restricted_credentials"]+=1
+        elif token_restriction(url):
+            base_dropped[token_restriction(url)]+=1
         elif MEDIA_EXT.search(url):
             base_dropped["direct_media_file"]+=1
         else:
