@@ -31,6 +31,8 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Probe each unique stream once
         run: python tools/probe_playlist_preview.py
+      - name: Build conservative review copy (no publish)
+        run: python tools/create_probe_review.py
       - name: Upload preview, probe results and report
         uses: actions/upload-artifact@v4
         with:
@@ -40,5 +42,7 @@ jobs:
             preview-report.md
             probe-report.md
             probe-results.csv
+            playlist-review.m3u
+            probe-cleanup-report.md
           if-no-files-found: error
           retention-days: 7
