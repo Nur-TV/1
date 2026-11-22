@@ -1,0 +1,37 @@
+name: Publish review playlist to test branch
+
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-review-test.yml'
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish-test-copy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+        with:
+          ref: test-playlist-review-2026-11-22
+          fetch-depth: 1
+      - name: Download reviewed candidate artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nur-tv-playlist-candidate-preview
+          path: review-artifact
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 45026568618
+      - name: Publish only to isolated test branch
+        run: |
+          test -s review-artifact/playlist-review.m3u
+          cp review-artifact/playlist-review.m3u playlist-review.m3u
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist-review.m3u
+          git commit -m "Add review playlist for Televizo testing"
+          git push origin HEAD:test-playlist-review-2026-11-22
