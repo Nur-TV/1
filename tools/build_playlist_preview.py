@@ -40,13 +40,13 @@ BASE_GROUPS = set()
 REPORT = Path("preview-report.md")
 
 REMOVE_WORDS={"hd","fhd","uhd","4k","8k","sd","hdtv","tv","телеканал","канал","channel","online","онлайн","live","лайв"}
-MEDIA_EXT=re.compile(r"\.(mp4|mkv|avi|mov|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)(?:$|[?#])",re.I)
+MEDIA_EXT=re.compile(r"\.(mp4|mkv|avi|mov|m4v|webm|flv|wmv|mpg|mpeg|m4a|aac|flac)(?:$|[?#&])",re.I)
 RADIO_EXT=re.compile(r"\.(mp3|aacp?)(?:$|[?#])",re.I)
 RESTRICTED=re.compile(r"(?:mdrm|drmreq=|access_token=|username=|password=|(?:[?&])cid=|(?:[?&])did=|(?:[?&])mac=|(?:[?&])play_token=)",re.I)
 ADULT_WORDS=re.compile(r"(?:18\+|xxx|porn|porno|erotic|erotica|playboy|penthouse|brazzers|hustler|dorcel|adult|взросл|эрот|порно|порн)",re.I)
 BAD_GROUP=re.compile(r"(?:\btest\b|тест|🔺\s*info|тех\s*поддерж|поддержать|premium playlist|премиальный плейлист|not\s*24/7|no\s*24/7|не\s*24/7|catcast.*not\s*24/7)",re.I)
 PAID_GROUP=re.compile(r"(?:\bwink\b|ott\s*club)",re.I)
-VOD_PATH=re.compile(r"/(?:hls/)?(?:film|films|movie|movies|serials|series|multfilm)(?:/|$)|/(?:play/)?(?:movie|series)\\.php(?:$|[?])",re.I)
+VOD_PATH=re.compile(r"/(?:hls/)?(?:film|films|movie|movies|serials|series|multfilm)(?:/|$)|/(?:play/)?(?:movie|series)\.php(?:$|[?])",re.I)
 
 def norm(value):
     value=unicodedata.normalize("NFKC",value or "").lower().replace("ё","е")
@@ -78,7 +78,7 @@ def token_restriction(url):
         return "restricted_credentials"
     if any(value.lower() in {"movie","series"} for value in query.get("type",[])):
         return "vod_api_endpoint"
-    expiry=re.search(r"/e/(\\d{10})/",parsed.path)
+    expiry=re.search(r"/e/(\d{10})/",parsed.path)
     if expiry and int(expiry.group(1)) < int(time.time())-60:
         return "expired_access_token"
     for values in query.values():
