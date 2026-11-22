@@ -10,8 +10,8 @@ from urllib.parse import urlparse
 PLAYLIST=Path("playlist-preview.m3u")
 REPORT=Path("probe-report.md")
 CSV=Path("probe-results.csv")
-WORKERS=40
-TIMEOUT=8
+WORKERS=100
+TIMEOUT=5
 
 def entries_from_m3u(path):
     lines=path.read_text(encoding="utf-8").splitlines()
@@ -67,12 +67,15 @@ def main():
     results=[]
     start=time.time()
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
-        for offset in range(0,len(urls),500):
-            batch=urls[offset:offset+500]
+        for offset in range(0,len(urls),1000):
+            batch=urls[offset:offset+1000]
             futures=[pool.submit(probe,(first_name[url],url)) for url in batch]
+            done=0
             for f in concurrent.futures.as_completed(futures):
                 results.append(f.result())
-            print(f"Probed {min(offset+len(batch),len(urls))}/{len(urls)} unique URLs")
+                done+=1
+                if done % 100 == 0 or done == len(batch):
+                    print(f"Probed {offset+done}/{len(urls)} unique URLs", flush=True)
     counts=collections.Counter(x[2] for x in results)
     hosts=collections.defaultdict(collections.Counter)
     for url,name,status,types,err in results:
