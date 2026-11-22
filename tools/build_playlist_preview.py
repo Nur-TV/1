@@ -171,14 +171,14 @@ def map_group(group,name,adult,source):
     if re.search(r"мужск",x): return "Мужские"
     n=norm(name)
     rules=[
-      ("Новости",r"новост|news|rbc|cnn|bbc|rt\b|россия 24|мир 24"),
-      ("Спорт",r"спорт|sport|матч|eurosport|football|ufc|tennis"),
-      ("Детские",r"детск|мульт|cartoon|kids|disney|nick|gulli|tiji"),
-      ("Музыкальные",r"музык|music|mtv|bridge|muz|шансон|radio record"),
-      ("Кино и сериалы",r"кино|film|movie|cinema|сериал|viju|tv1000|дом кино|кинохит"),
-      ("Познавательные",r"discovery|history|nat geo|animal|travel|познав|наука"),
+      ("Новости",r"новост|news|rbc|cnn|bbc|rt\\b|россия 24|мир 24"),
+      ("Спорт",r"спорт|sport|матч|eurosport|football|ufc|tennis|боец|старт"),
+      ("Детские",r"детск|мульт|cartoon|kids|disney|nick|gulli|tiji|карусел|рыжий|бобер|смайлик|ani\\b|superheroes|nickelodeon|cartoon network|мама tv"),
+      ("Познавательные",r"discovery|history|nat geo|animal|travel|познав|наука|da vinci|viasat nature|viasat history|моя планета|живая планета"),
+      ("Музыкальные",r"музык|music|mtv|bridge|muz|шансон|radio record|тнт music|м1 music"),
+      ("Кино и сериалы",r"кино|film|movie|cinema|сериал|viju|tv1000|дом кино|кинохит|киномикс|кинопремьера|amedia"),
       ("Религиозные",r"спас|союз|церков|православ"),
-      ("Развлекательные",r"развлек|тнт|стс|пятниц|домашний|комеди|юмор"),
+      ("Развлекательные",r"развлек|тнт|стс|пятниц|домашний|комеди|юмор|солнце|суббота|че\\b|2x2"),
       ("Региональные",r"губерн|городск|област|регион|телеканал|телевидение|край"),
       ("Федеральные",r"первый канал|россия 1|россия 24|нтв|рен тв|пятый канал|тв центр|звезда"),
     ]
