@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'tools/build_playlist_preview.py'
+      - 'tools/probe_playlist_preview.py'
+      - 'tools/create_probe_review.py'
       - '.github/workflows/preview-playlist.yml'
   workflow_dispatch:
 
