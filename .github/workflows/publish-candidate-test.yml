@@ -123,7 +123,7 @@ jobs:
           remove_norm={norm(x) for x in remove_groups}
           removed_requested=Counter()
           for n,(block,url) in enumerate(records):
-              extgrp_match=re.search(r'^#EXTGRP:([^\\r\\n]*)', '\\n'.join(block), re.I|re.M)
+              extgrp_match=re.search(r'^#EXTGRP:([^\r\n]*)', '\n'.join(block), re.I|re.M)
               extgrp=extgrp_match.group(1).strip() if extgrp_match else ''
               m=re.search(r'group-title="([^"]*)"',block[0],re.I)
               group=extgrp or (m.group(1).strip() if m else '')
