@@ -1,0 +1,69 @@
+name: Publish isolated test playlist
+on:
+  push:
+    branches:
+      - candidate-26-review-2026-11-23
+    paths:
+      - .github/workflows/publish-candidate-test.yml
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: candidate-26-review-2026-11-23
+      - name: Download completed candidate artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/Nur-TV/1/actions/artifacts/14862579445/zip" -o /tmp/candidate.zip
+          mkdir /tmp/candidate
+          unzip -q /tmp/candidate.zip -d /tmp/candidate
+      - name: Remove unmistakable VOD catalogue entries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, collections
+          src=Path('/tmp/candidate/playlist-final-test.m3u')
+          lines=src.read_text(encoding='utf-8-sig',errors='replace').splitlines()
+          records=[]; i=0
+          while i<len(lines):
+              if not lines[i].startswith('#EXTINF:'):
+                  i+=1; continue
+              block=[lines[i]]; i+=1
+              while i<len(lines) and lines[i].startswith('#'):
+                  block.append(lines[i]); i+=1
+              url=lines[i].strip() if i<len(lines) else ''
+              if url: i+=1
+              records.append((block,url))
+          base_count=2976
+          vod_group=re.compile(r'(кинозал|медиатек|фильм|мультфильм|сериал|movies|films|series|vod|on.?demand|ролики|боевик|триллер|комеди|ужас|драм|мелодрам|фантастик|приключен|4k\\s*kino\\s*zal|kino\\s*zal|новинки\\s+кино|русское\\s+кино)',re.I)
+          kept=[]; removed=collections.Counter()
+          for n,(block,url) in enumerate(records):
+              if n<base_count:
+                  kept.append((block,url)); continue
+              m=re.search(r'group-title="([^"]*)"',block[0],re.I)
+              group=m.group(1) if m else ''
+              if 'hls-vod' in url.lower():
+                  removed['hls-vod']+=1; continue
+              if vod_group.search(group):
+                  removed[group]+=1; continue
+              kept.append((block,url))
+          out=Path('playlist-test.m3u')
+          with out.open('w',encoding='utf-8',newline='\\n') as f:
+              for block,url in kept:
+                  for line in block: f.write(line+'\\n')
+                  if url: f.write(url+'\\n')
+          print(f'Input={len(records)} output={len(kept)} baseline={base_count} additions={len(kept)-base_count} removed={sum(removed.values())}')
+          print(dict(removed))
+          PY
+      - name: Commit test playlist to candidate branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist-test.m3u
+          git commit -m "Publish isolated filtered test playlist"
+          git push origin candidate-26-review-2026-11-23
