@@ -59,7 +59,7 @@ jobs:
           }
           cities = re.compile(r'^(москва|санкт.?петербург|екатеринбург|новосибирск|краснодар|челябинск|иркутск|омск|пермь|воронеж|казань|самара|уфа|тюмень|владивосток|хабаровск|абакан|архангельск|астрахань|барнаул|белгород|брянск|вологда|волгоград|владимир|калуга|калининград|кемерово|киров|кострома|курск|липецк|нижний новгород|оренбург|пенза|рязань|саратов|сургут|тверь|томск|тула|ульяновск|чита|ярославль|регионы|региональные)',re.I)
           sport = re.compile(r'(спорт|sport|match|матч|football|soccer|hockey|баскетбол)',re.I)
-          kids = re.compile(r'(дет|детск|kids|children|cartoon)',re.I)
+          kids = re.compile(r'(дет|детск|kids|children|cartoon|карусел)',re.I)
           news = re.compile(r'(новост|news)',re.I)
           adult = re.compile(r'(adult|18\+|взросл)',re.I)
           knowledge = re.compile(r'(познав|истори|history|document|документ|природ|nature|science|наук|географ)',re.I)
@@ -103,8 +103,58 @@ jobs:
               else:
                   target='Разное'
               head,sep,title=block[0].partition(',')
-              head=re.sub(r'\s*group-title="[^"]*"','',head,flags=re.I)
-              title=re.sub(r'\s*group-title="[^"]*"','',title,flags=re.I)
+              head=re.sub(r'\s*group-title=.*
+              remapped[group or '(без группы)']+=1
+              kept.append((block,url))
+          out=Path('playlist-test.m3u')
+          with out.open('w',encoding='utf-8',newline='') as f:
+              for block,url in kept:
+                  for line in block: f.write(line+'\n')
+                  if url: f.write(url+'\n')
+          groups=Counter()
+          for block,url in kept:
+              m=re.search(r'group-title="([^"]*)"',block[0],re.I)
+              groups[m.group(1) if m else '(без группы)']+=1
+          print(f'Input={len(records)} output={len(kept)} baseline={base_count} additions={len(kept)-base_count} removed={sum(removed.values())}')
+          print('Final groups:',len(groups),dict(groups))
+          print('Remapped source groups:',len(remapped))
+          print('Removed groups:',dict(removed))
+          assert all((lambda m: m and m.group(1) in canonical)(re.search(r'group-title="([^"]*)"',block[0],re.I)) for block,url in kept[base_count:]), 'Unexpected group names remain in imported records'
+          PY
+      - name: Commit test playlist to candidate branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist-test.m3u
+          git commit -m "Normalize test playlist groups to original structure"
+          git push origin candidate-26-review-2026-11-23
+, '', head, flags=re.I)
+              title=re.sub(r'\s*group-title=.*
+              remapped[group or '(без группы)']+=1
+              kept.append((block,url))
+          out=Path('playlist-test.m3u')
+          with out.open('w',encoding='utf-8',newline='') as f:
+              for block,url in kept:
+                  for line in block: f.write(line+'\n')
+                  if url: f.write(url+'\n')
+          groups=Counter()
+          for block,url in kept:
+              m=re.search(r'group-title="([^"]*)"',block[0],re.I)
+              groups[m.group(1) if m else '(без группы)']+=1
+          print(f'Input={len(records)} output={len(kept)} baseline={base_count} additions={len(kept)-base_count} removed={sum(removed.values())}')
+          print('Final groups:',len(groups),dict(groups))
+          print('Remapped source groups:',len(remapped))
+          print('Removed groups:',dict(removed))
+          assert all((lambda m: m and m.group(1) in canonical)(re.search(r'group-title="([^"]*)"',block[0],re.I)) for block,url in kept[base_count:]), 'Unexpected group names remain in imported records'
+          PY
+      - name: Commit test playlist to candidate branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist-test.m3u
+          git commit -m "Normalize test playlist groups to original structure"
+          git push origin candidate-26-review-2026-11-23
+, '', title, flags=re.I)
               block[0]=head+' group-title="'+target+'"'+(sep+title if sep else '')
               remapped[group or '(без группы)']+=1
               kept.append((block,url))
