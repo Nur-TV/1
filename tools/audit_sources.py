@@ -79,10 +79,12 @@ def audit(item):
 def main():
  with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
   results=list(ex.map(audit,SOURCES))
+  media_results=list(ex.map(audit,MEDIA_SOURCES))
   adult_results=list(ex.map(audit,ADULT_SOURCES))
  total=sum(x[2] for x in results); errors=sum(bool(x[3]) for x in results)
+ media_total=sum(x[2] for x in media_results); media_errors=sum(bool(x[3]) for x in media_results)
  adult_total=sum(x[2] for x in adult_results); adult_errors=sum(bool(x[3]) for x in adult_results)
- report=["# Nur-TV — аудит источников IPTV","","Предварительный структурный аудит (автоматическая инвентаризация источников). Это НЕ проверка воспроизведения и НЕ автоматическое разрешение на импорт. Наличие .m3u8 само по себе не доказывает, что запись является линейным телеканалом.",f"- Общие источники: {len(SOURCES)}; успешно: {len(SOURCES)-errors}; ошибок: {errors}; записей EXTINF: {total}",f"- Источники 18+: {len(ADULT_SOURCES)}; успешно: {len(ADULT_SOURCES)-adult_errors}; ошибок: {adult_errors}; записей EXTINF: {adult_total}","", "## Общие источники", "\n\n".join(x[1] for x in results), "", "## Отдельная проверка 18+ (все записи при сборке должны попасть в одну группу «Взрослые»)", "\n\n".join(x[1] for x in adult_results)]
- with open("source-audit.md","w",encoding="utf-8") as f: f.write("\n".join(report)+"\n")
- print("\n".join(report))
+ report=["# Nur-TV — аудит всех 26 источников IPTV","","Предварительная инвентаризация структуры. Это НЕ проверка воспроизведения и НЕ автоматическое разрешение на импорт. Наличие .m3u8 само по себе не доказывает, что запись является линейным телеканалом.",f"- Обычные ТВ: {len(SOURCES)}; успешно: {len(SOURCES)-errors}; ошибок: {errors}; записей EXTINF: {total}",f"- Медиатеки: {len(MEDIA_SOURCES)}; успешно: {len(MEDIA_SOURCES)-media_errors}; ошибок: {media_errors}; записей EXTINF: {media_total}",f"- Источники 18+: {len(ADULT_SOURCES)}; успешно: {len(ADULT_SOURCES)-adult_errors}; ошибок: {adult_errors}; записей EXTINF: {adult_total}","","## Обычные ТВ-источники","\\n\\n".join(x[1] for x in results),"","## Медиатеки (ищем только линейные live-каналы; VOD не импортировать)","\\n\\n".join(x[1] for x in media_results),"","## Источники 18+ (при сборке — одна группа «Взрослые»)","\\n\\n".join(x[1] for x in adult_results)]
+ with open("source-audit.md","w",encoding="utf-8") as f: f.write("\\n".join(report)+"\\n")
+ print("\\n".join(report))
 if __name__=="__main__": main()
