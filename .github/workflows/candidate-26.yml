@@ -1,0 +1,46 @@
+name: Build and probe 26-source IPTV candidate
+
+on:
+  push:
+    paths:
+      - 'tools/build_candidate_26.py'
+      - 'tools/finalize_candidate_26.py'
+      - '.github/workflows/candidate-26.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install requests
+        run: python -m pip install requests
+      - name: Build candidate from baseline and all 26 sources
+        run: python tools/build_candidate_26.py
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Probe each unique URL once
+        run: python tools/probe_playlist_preview.py
+      - name: Finalize conservatively
+        run: python tools/finalize_candidate_26.py
+      - name: Upload candidate and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: nur-tv-final-candidate-26
+          path: |
+            playlist-final-test.m3u
+            candidate-build-report.md
+            candidate-final-report.md
+            probe-report.md
+            probe-results.csv
+          if-no-files-found: error
+          retention-days: 7
