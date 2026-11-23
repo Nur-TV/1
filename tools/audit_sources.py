@@ -5,22 +5,31 @@ import requests
 from urllib.parse import urlparse
 
 SOURCES = [
- ("UfoTV","https://raw.githubusercontent.com/UFOTVM/TV/refs/heads/main/ufo.m3u"),
- ("FreeTV","https://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV"),
- ("EndikTV","https://bit.ly/Endik1"),
- ("KinomixTV","https://tinyurl.com/KinomixTV"),
- ("VivamaxTV","https://bit.ly/vivamax-m3u"),
- ("ShamsTV","https://tinyurl.com/shamsiptv"),
- ("TivinorTV","https://raw.githubusercontent.com/Tivinor/tivinor/refs/heads/main/tivinor.m3u"),
- ("MaxTV","https://raw.githubusercontent.com/MaxTVNew01/Maxtvvhs/refs/heads/main/LICENSE.m3u"),
- ("ZunoTV","https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/TV"),
- ("DolovTV","https://raw.githubusercontent.com/Dolov07KBR/DF_IPTV/refs/heads/main/07.m3u"),
- ("MainTV","https://raw.githubusercontent.com/premiumtvam/sp.server.ru/refs/heads/main/README.md"),
- ("SpirtTV","https://spirt007.github.io/Tvru/Rus.m3u"),
- ("VeronaTV","https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u"),
- ("ZabavaTV","https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u"),
- ("Axenov","https://iptv.axenov.dev/so"),
- ("Loganet","https://loganet.vercel.app/LoganetXStrawberry.m3u"),
+ # 15 источников линейного ТВ из резервной копии Televizo
+ ("TV / UfoTV","https://raw.githubusercontent.com/UFOTVM/TV/refs/heads/main/ufo.m3u"),
+ ("TV / FreeTV","https://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV"),
+ ("TV / EndikTV","https://bit.ly/Endik1"),
+ ("TV / KinomixTV","https://tinyurl.com/KinomixTV"),
+ ("TV / VivamaxTV","https://bit.ly/vivamax-m3u"),
+ ("TV / ShamsTV","https://tinyurl.com/shamsiptv"),
+ ("TV / TivinorTV","https://raw.githubusercontent.com/Tivinor/tivinor/refs/heads/main/tivinor.m3u"),
+ ("TV / MaxTV","https://raw.githubusercontent.com/MaxTVNew01/Maxtvvhs/refs/heads/main/LICENSE.m3u"),
+ ("TV / ZunoTV","https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/TV"),
+ ("TV / DolovTV","https://raw.githubusercontent.com/Dolov07KBR/DF_IPTV/refs/heads/main/07.m3u"),
+ ("TV / MainTV","https://raw.githubusercontent.com/premiumtvam/sp.server.ru/refs/heads/main/README.md"),
+ ("TV / WinkTV","https://tinyurl.com/ruwink"),
+ ("TV / SpirtTV","https://spirt007.github.io/Tvru/Rus.m3u"),
+ ("TV / VeronaTV","https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u"),
+ ("TV / ZabavaTV","https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u"),
+ # 8 медиатеки: проверяем наличие внутри них именно линейных ТВ, не импортируем VOD целиком
+ ("Медиатека / Max Mediateka","https://raw.githubusercontent.com/MaxTVNew01/maxtv-uz-media-index/refs/heads/main/README.md"),
+ ("Медиатека / Drive Mediateka","https://tinyurl.com/drivemediateka2"),
+ ("Медиатека / Multfilm Mediateka","http://dmi3y-tv.online/iptv/multfilm.m3u"),
+ ("Медиатека / NashyMultiki","https://raw.githubusercontent.com/user797/Playlists/refs/heads/main/Cartoons.m3u8"),
+ ("Медиатека / Suzus Mediateka","https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/KINO/RU"),
+ ("Медиатека / Dmi3y Mediateka","http://dmi3y-tv.online/iptv/film.m3u"),
+ ("Медиатека / Films Mediateka","https://raw.githubusercontent.com/Dimonovich/TV/refs/heads/Dimonovich/FREE/FILMS.m3u"),
+ ("Медиатека / Filmd","http://dmi3y-tv.online/iptv/film_d-tv.m3u"),
 ]
 
 ADULT_SOURCES = [
