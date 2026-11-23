@@ -179,6 +179,9 @@ jobs:
                           f.write(line+'\n')
                   if url:
                       f.write(url+'\n')
+          data=out.read_text(encoding='utf-8')
+          data=re.sub(r'(?i)#EXTGRP:[^\r\n]*','',data)
+          out.write_text(data,encoding='utf-8',newline='')
           groups=Counter()
           for block,url in kept:
               m=re.search(r'group-title="([^"]*)"',block[0],re.I)
