@@ -105,8 +105,11 @@ jobs:
               if m:
                   block[0]=re.sub(r'group-title="[^"]*"',lambda _: 'group-title="'+target+'"',block[0],count=1,flags=re.I)
               else:
-                  block[0]=block[0].replace('#EXTINF:', '#EXTINF:') 
-                  block[0]=re.sub(r'(#EXTINF:[^,]*)(,)',r'\1 group-title="'+target+r'"\2',block[0],count=1)
+                  comma=block[0].find(',')
+                  if comma >= 0:
+                      block[0]=block[0][:comma]+' group-title="'+target+'"'+block[0][comma:]
+                  else:
+                      block[0]+=' group-title="'+target+'"'
               remapped[group or '(без группы)']+=1
               kept.append((block,url))
           out=Path('playlist-test.m3u')
