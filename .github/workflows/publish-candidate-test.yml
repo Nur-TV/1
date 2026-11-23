@@ -40,7 +40,7 @@ jobs:
               if url: i+=1
               records.append((block,url))
           base_count=2976
-          vod_group=re.compile(r'(кинозал|медиатек|фильм|мультфильм|сериал|movies|films|series|vod|on.?demand|ролики|боевик|триллер|комеди|ужас|драм|мелодрам|фантастик|приключен|4k\\s*kino\\s*zal|kino\\s*zal|новинки\\s+кино|русское\\s+кино)',re.I)
+          vod_group=re.compile(r'(кинозал|медиатек|фильм|мультфильм|сериал|movies|films|series|vod|on.?demand|ролики|боевик|триллер|комеди|ужас|драм|мелодрам|фантастик|приключен|4k\s*kino\s*zal|kino\s*zal|новинки\s+кино|русское\s+кино)',re.I)
           kept=[]; removed=collections.Counter()
           for n,(block,url) in enumerate(records):
               if n<base_count:
