@@ -5,6 +5,7 @@ on:
       - candidate-26-review-2026-11-23
     paths:
       - .github/workflows/publish-candidate-test.yml
+  workflow_dispatch:
 permissions:
   contents: write
   actions: read
