@@ -103,8 +103,8 @@ jobs:
               else:
                   target='Разное'
               head,sep,title=block[0].partition(',')
-              head=re.sub(r'\\s*group-title="[^"]*"','',head,flags=re.I)
-              title=re.sub(r'\\s*group-title="[^"]*"','',title,flags=re.I)
+              head=re.sub(r'\s*group-title="[^"]*"','',head,flags=re.I)
+              title=re.sub(r'\s*group-title="[^"]*"','',title,flags=re.I)
               block[0]=head+' group-title="'+target+'"'+(sep+title if sep else '')
               remapped[group or '(без группы)']+=1
               kept.append((block,url))
