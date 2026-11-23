@@ -22,11 +22,12 @@ jobs:
           curl -fL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/Nur-TV/1/actions/artifacts/14862579445/zip" -o /tmp/candidate.zip
           mkdir /tmp/candidate
           unzip -q /tmp/candidate.zip -d /tmp/candidate
-      - name: Remove unmistakable VOD catalogue entries
+      - name: Filter VOD and normalize groups to original 37
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re, collections
+          from collections import Counter
+          import re
           src=Path('/tmp/candidate/playlist-final-test.m3u')
           lines=src.read_text(encoding='utf-8-sig',errors='replace').splitlines()
           records=[]; i=0
@@ -40,30 +41,93 @@ jobs:
               if url: i+=1
               records.append((block,url))
           base_count=2976
-          vod_group=re.compile(r'(кинозал|медиатек|фильм|мультфильм|сериал|movies|films|series|vod|on.?demand|ролики|боевик|триллер|комеди|ужас|драм|мелодрам|фантастик|приключен|4k\s*kino\s*zal|kino\s*zal|новинки\s+кино|русское\s+кино)',re.I)
-          kept=[]; removed=collections.Counter()
+          canonical = {
+              'Разное','Региональные','Эфирные','Turon Media (VPN)','LLC G&G-Telecom',
+              'Спорт','Турция','Uplink (VPN)','Кино и сериалы','Кинозалы 🍿 (VPN)',
+              'Оргтехсервис (VPN)','Узбекистан','Будущее','Взрослые','Общественные',
+              'Познавательные','Развлекательные','Велком','Наш Нет 🇺🇦','Детские',
+              'Datacamp Limited','Казахстан','Армения','Новости','Досуг','Федеральные',
+              'Беларусь','Сити Эдем','Грузия','Индия','Азербайджан','Туркменистан',
+              'Религиозные','Мужские','Молдавия','Кыргызстан'
+          }
+          country = {
+              'uzbekistan':'Узбекистан','turkey':'Турция','kazakhstan':'Казахстан',
+              'armenia':'Армения','belarus':'Беларусь','georgia':'Грузия',
+              'india':'Индия','azerbaijan':'Азербайджан','turkmenistan':'Туркменистан',
+              'moldova':'Молдавия','молдова':'Молдавия','kyrgyzstan':'Кыргызстан',
+              'кыргызстан':'Кыргызстан'
+          }
+          cities = re.compile(r'^(москва|санкт.?петербург|екатеринбург|новосибирск|краснодар|челябинск|иркутск|омск|пермь|воронеж|казань|самара|уфа|тюмень|владивосток|хабаровск|абакан|архангельск|астрахань|барнаул|белгород|брянск|вологда|волгоград|владимир|калуга|калининград|кемерово|киров|кострома|курск|липецк|нижний новгород|оренбург|пенза|рязань|саратов|сургут|тверь|томск|тула|ульяновск|чита|ярославль|регионы|региональные)',re.I)
+          sport = re.compile(r'(спорт|sport|match|матч|football|soccer|hockey|баскетбол)',re.I)
+          kids = re.compile(r'(дет|детск|kids|children|cartoon)',re.I)
+          news = re.compile(r'(новост|news)',re.I)
+          adult = re.compile(r'(adult|18\+|взросл)',re.I)
+          knowledge = re.compile(r'(познав|истори|history|document|документ|природ|nature|science|наук|географ)',re.I)
+          entertainment = re.compile(r'(развлек|шоу|юмор|комед|entertain|show|humor|music|музык|музыка|радио|radio|концерт|клипы|досуг|хобби)',re.I)
+          religion = re.compile(r'(религ|relig)',re.I)
+          cinema = re.compile(r'(кино|кинозал|film|movie|сериал)',re.I)
+          regional = re.compile(r'(регион|region|город|област|край)',re.I)
+          kept=[]; removed=Counter(); remapped=Counter()
           for n,(block,url) in enumerate(records):
               if n<base_count:
                   kept.append((block,url)); continue
               m=re.search(r'group-title="([^"]*)"',block[0],re.I)
-              group=m.group(1) if m else ''
+              group=(m.group(1).strip() if m else '')
               if 'hls-vod' in url.lower():
                   removed['hls-vod']+=1; continue
-              if vod_group.search(group):
+              if re.search(r'(кинозал|медиатек|фильм|мультфильм|сериал|movies|films|series|vod|on.?demand|ролики|боевик|триллер|комеди|ужас|драм|мелодрам|фантастик|приключен|4k\s*kino\s*zal|kino\s*zal|новинки\s+кино|русское\s+кино)',group,re.I):
                   removed[group]+=1; continue
+              low=group.casefold()
+              if group in canonical:
+                  target=group
+              elif low in country:
+                  target=country[low]
+              elif adult.search(group):
+                  target='Взрослые'
+              elif sport.search(group):
+                  target='Спорт'
+              elif kids.search(group):
+                  target='Детские'
+              elif news.search(group):
+                  target='Новости'
+              elif knowledge.search(group):
+                  target='Познавательные'
+              elif religion.search(group):
+                  target='Религиозные'
+              elif regional.search(group) or cities.search(group):
+                  target='Региональные'
+              elif cinema.search(group):
+                  target='Кино и сериалы'
+              elif entertainment.search(group):
+                  target='Развлекательные'
+              else:
+                  target='Разное'
+              if m:
+                  block[0]=re.sub(r'group-title="[^"]*"',lambda _: 'group-title="'+target+'"',block[0],count=1,flags=re.I)
+              else:
+                  block[0]=block[0].replace('#EXTINF:', '#EXTINF:') 
+                  block[0]=re.sub(r'(#EXTINF:[^,]*)(,)',r'\1 group-title="'+target+r'"\2',block[0],count=1)
+              remapped[group or '(без группы)']+=1
               kept.append((block,url))
           out=Path('playlist-test.m3u')
           with out.open('w',encoding='utf-8',newline='') as f:
               for block,url in kept:
                   for line in block: f.write(line+'\n')
                   if url: f.write(url+'\n')
+          groups=Counter()
+          for block,url in kept:
+              m=re.search(r'group-title="([^"]*)"',block[0],re.I)
+              groups[m.group(1) if m else '(без группы)']+=1
           print(f'Input={len(records)} output={len(kept)} baseline={base_count} additions={len(kept)-base_count} removed={sum(removed.values())}')
-          print(dict(removed))
+          print('Final groups:',len(groups),dict(groups))
+          print('Remapped source groups:',len(remapped))
+          print('Removed groups:',dict(removed))
+          assert set(groups).issubset(canonical), 'Unexpected group names remain'
           PY
       - name: Commit test playlist to candidate branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add playlist-test.m3u
-          git commit -m "Publish isolated filtered test playlist"
+          git commit -m "Normalize test playlist groups to original structure"
           git push origin candidate-26-review-2026-11-23
