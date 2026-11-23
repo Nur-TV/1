@@ -191,6 +191,7 @@ jobs:
           assert not any(norm(g) in forbidden for g in groups), 'A screenshot-listed group remains in output'
           assert not any(g.strip()!='Разное' and norm(g)==norm('Разное') for g in groups), 'Emoji Разное group remains separate'
           assert groups.get('Разное',0)>0, 'Plain Разное group unexpectedly missing'
+          assert '#EXTGRP:' not in out.read_text(encoding='utf-8'), 'EXTGRP metadata remains and may create duplicate Televizo groups'
           assert all((lambda m: m and m.group(1) in canonical)(re.search(r'group-title="([^"]*)"',block[0],re.I)) for block,url in kept[base_count:]), 'Unexpected group names remain in imported records'
           PY
       - name: Commit test playlist to candidate branch
