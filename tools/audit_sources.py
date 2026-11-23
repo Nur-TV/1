@@ -1,4 +1,4 @@
-import collections
+import collections  # full 26-source audit
 import concurrent.futures
 import re
 import requests
