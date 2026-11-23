@@ -102,14 +102,10 @@ jobs:
                   target='Развлекательные'
               else:
                   target='Разное'
-              if m:
-                  block[0]=re.sub(r'group-title="[^"]*"',lambda _: 'group-title="'+target+'"',block[0],count=1,flags=re.I)
-              else:
-                  comma=block[0].find(',')
-                  if comma >= 0:
-                      block[0]=block[0][:comma]+' group-title="'+target+'"'+block[0][comma:]
-                  else:
-                      block[0]+=' group-title="'+target+'"'
+              head,sep,title=block[0].partition(',')
+              head=re.sub(r'\\s*group-title="[^"]*"','',head,flags=re.I)
+              title=re.sub(r'\\s*group-title="[^"]*"','',title,flags=re.I)
+              block[0]=head+' group-title="'+target+'"'+(sep+title if sep else '')
               remapped[group or '(без группы)']+=1
               kept.append((block,url))
           out=Path('playlist-test.m3u')
