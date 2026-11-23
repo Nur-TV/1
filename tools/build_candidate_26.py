@@ -55,7 +55,7 @@ def adult_keep(source,group):
     g=norm(group)
     if source=="Xteen18+TV": return True
     if source=="Sexture18+TV": return g=="взрослые"
-    if source=="Adultip18+TV": return g in {"tv каналы","tv channel","телеканалы"}
+    if source=="Adultip18+TV": return g in {"каналы","телеканалы"}
     return False
 
 def accept(source,group,title,url,category):
@@ -70,7 +70,7 @@ def accept(source,group,title,url,category):
     if category=="adult":
         if not adult_keep(source,group): return False,"adult_vod_or_non_tv_group"
         return True,"adult_channel"
-    if VOD_GROUP.search(group): return False,"vod_group"
+    if VOD_GROUP.search(group) and "/live/" not in path.lower(): return False,"vod_group"
     return True,"kept_for_stream_probe"
 
 def main():
