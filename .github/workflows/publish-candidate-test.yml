@@ -77,12 +77,27 @@ jobs:
           kept=[]
           removed=Counter()
           remapped=Counter()
+          remove_groups={
+              'парад победы 1945 года','удивительные люди','на самом деле','мужское - женское',
+              'привет андрей','пусть говорят','поле чудес','концерты','утренняя почта',
+              'песня года','старые песни о главном','новый год и др','аншлаг и компания',
+              'юморина','кривое зеркало','юмор','петросян-шоу','что где когда','вселенная',
+              'детские фильмы и сказки','фильмы-2','radio record','кинозалы впн',
+              'сити эдэм','синеман'
+          }
+          def norm(s):
+              return re.sub(r'[^а-яa-z0-9]+','',s.casefold().replace('ё','е'))
+          remove_norm={norm(x) for x in remove_groups}
+          removed_requested=Counter()
           for n,(block,url) in enumerate(records):
+              m=re.search(r'group-title="([^"]*)"',block[0],re.I)
+              group=m.group(1).strip() if m else ''
+              if norm(group) in remove_norm:
+                  removed_requested[group or '(без группы)']+=1
+                  continue
               if n<base_count:
                   kept.append((block,url))
                   continue
-              m=re.search(r'group-title="([^"]*)"',block[0],re.I)
-              group=m.group(1).strip() if m else ''
               if 'hls-vod' in url.lower():
                   removed['hls-vod']+=1
                   continue
@@ -123,6 +138,7 @@ jobs:
           print(f'Input={len(records)} output={len(kept)} baseline={base_count} additions={len(kept)-base_count} removed={sum(removed.values())}')
           print('Final groups:',len(groups),dict(groups))
           print('Remapped source groups:',len(remapped))
+          print('Removed requested groups:',dict(removed_requested), 'total=',sum(removed_requested.values()))
           print('Removed entries:',dict(removed))
           assert len(records)>=base_count, 'Candidate unexpectedly smaller than original baseline'
           assert all((lambda m: m and m.group(1) in canonical)(re.search(r'group-title="([^"]*)"',block[0],re.I)) for block,url in kept[base_count:]), 'Unexpected group names remain in imported records'
