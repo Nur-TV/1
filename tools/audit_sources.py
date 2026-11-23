@@ -16,13 +16,21 @@ SOURCES = [
  ("ZunoTV","https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/TV"),
  ("DolovTV","https://raw.githubusercontent.com/Dolov07KBR/DF_IPTV/refs/heads/main/07.m3u"),
  ("MainTV","https://raw.githubusercontent.com/premiumtvam/sp.server.ru/refs/heads/main/README.md"),
+ ("WinkTV","https://tinyurl.com/ruwink"),
  ("SpirtTV","https://spirt007.github.io/Tvru/Rus.m3u"),
  ("VeronaTV","https://raw.githubusercontent.com/IPTVSHARED/VeronaTV/refs/heads/main/VeronaTV.m3u"),
  ("ZabavaTV","https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u"),
- ("Axenov","https://iptv.axenov.dev/so"),
- ("Loganet","https://loganet.vercel.app/LoganetXStrawberry.m3u"),
 ]
-
+MEDIA_SOURCES = [
+ ("Max Mediateka","https://raw.githubusercontent.com/MaxTVNew01/maxtv-uz-media-index/refs/heads/main/README.m3u"),
+ ("Drive Mediateka","https://tinyurl.com/drivemediateka2"),
+ ("Multfilm Mediateka","http://dmi3y-tv.online/iptv/multfilm.m3u"),
+ ("NashyMultiki Mediateka","https://raw.githubusercontent.com/user797/Playlists/refs/heads/main/Cartoons.m3u8"),
+ ("Suzus Mediateka","https://raw.githubusercontent.com/iptv-free/TV/refs/heads/FREE/KINO/RU"),
+ ("Dmi3y Mediateka","http://dmi3y-tv.online/iptv/film.m3u"),
+ ("Films Mediateka","https://raw.githubusercontent.com/Dimonovich/TV/refs/heads/Dimonovich/FREE/FILMS.m3u"),
+ ("Filmd Mediateka","http://dmi3y-tv.online/iptv/film_d-tv.m3u"),
+]
 ADULT_SOURCES = [
  ("Xteen18+TV","https://tinyurl.com/xteen18"),
  ("Sexture18+TV","https://tinyurl.com/sexture18"),
