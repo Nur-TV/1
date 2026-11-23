@@ -53,10 +53,10 @@ jobs:
                   removed[group]+=1; continue
               kept.append((block,url))
           out=Path('playlist-test.m3u')
-          with out.open('w',encoding='utf-8',newline='\\n') as f:
+          with out.open('w',encoding='utf-8',newline='') as f:
               for block,url in kept:
-                  for line in block: f.write(line+'\\n')
-                  if url: f.write(url+'\\n')
+                  for line in block: f.write(line+'\n')
+                  if url: f.write(url+'\n')
           print(f'Input={len(records)} output={len(kept)} baseline={base_count} additions={len(kept)-base_count} removed={sum(removed.values())}')
           print(dict(removed))
           PY
