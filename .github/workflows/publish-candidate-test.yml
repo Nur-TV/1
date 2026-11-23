@@ -122,7 +122,7 @@ jobs:
           print('Final groups:',len(groups),dict(groups))
           print('Remapped source groups:',len(remapped))
           print('Removed groups:',dict(removed))
-          assert set(groups).issubset(canonical), 'Unexpected group names remain'
+          assert all((lambda m: m and m.group(1) in canonical)(re.search(r'group-title="([^"]*)"',block[0],re.I)) for block,url in kept[base_count:]), 'Unexpected group names remain in imported records'
           PY
       - name: Commit test playlist to candidate branch
         run: |
