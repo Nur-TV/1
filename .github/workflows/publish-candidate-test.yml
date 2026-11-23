@@ -174,7 +174,7 @@ jobs:
           with out.open('w',encoding='utf-8',newline='') as f:
               for block,url in kept:
                   for line in block:
-                      line=re.sub(r'#EXTGRP:[^\\r\\n]*','',line)
+                      line=re.sub(r'#EXTGRP:[^\r\n]*','',line)
                       if line:
                           f.write(line+'\n')
                   if url:
