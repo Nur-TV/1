@@ -1,0 +1,36 @@
+name: Inspect test playlist groups
+on:
+  push:
+    branches:
+      - candidate-26-review-2026-11-23
+    paths:
+      - .github/workflows/inspect-groups.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: candidate-26-review-2026-11-23
+      - name: List group names and counts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import re
+          for filename in ('playlist.m3u','playlist-test.m3u'):
+              p=Path(filename)
+              if not p.exists():
+                  print(filename, 'NOT FOUND'); continue
+              c=Counter()
+              with p.open(encoding='utf-8-sig',errors='replace') as f:
+                  for line in f:
+                      if line.startswith('#EXTINF:'):
+                          m=re.search(r'group-title="([^"]*)"',line,re.I)
+                          c[m.group(1) if m else '(без группы)']+=1
+              print('\\n###',filename,'unique groups=',len(c),'records=',sum(c.values()))
+              for name,n in c.most_common():
+                  print(f'{n:6} | {name}')
+          PY
