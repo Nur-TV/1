@@ -4670,14 +4670,10 @@ https://iptv.itv.uz/hls/live/t/Laq2jemNlBkTtNHRSKjYyQ/e/1795290975/1499/index.m3
 https://iptv.itv.uz/hls/live/t/ojPsRdcsRK9e9S_Z9sqYUA/e/1795290960/1468/index.m3u8?ip=45.95.203.252
 #EXTINF:-1 group-title="Turon Media (VPN)" tvg-id="nurtv-7a21e74ea4bfbb1d" tvg-logo="https://iptvx.one/picons/kuxnia-tv.png",Кухня ТВ
 https://stream8.cinerama.uz/1236/tracks-v1a1/mono.m3u8
-#EXTINF:-1 group-title="Datacamp Limited" tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png", Победа
-http://185.76.10.53:8080/srv5/pobeda/tracks-v1a1/mono.m3u8?cid=144&did=5366158&m=1&rid=24397&token=2022b6576a65c40ede42a7d4941b5471
 #EXTINF:-1 group-title="LLC G&G-Telecom" tvg-id="nurtv-7a21e74ea4bfbb1d" tvg-logo="https://iptvx.one/picons/kuxnia-tv.png",Кухня ТВ
 http://195.64.140.147:10037/37
 #EXTINF:-1 group-title="LLC G&G-Telecom" tvg-id="nurtv-999848853c632e4f" tvg-logo="https://iptvx.one/picons/telekafe.png",Телекафе
 http://195.64.140.147:10026/26
-#EXTINF:-1 group-title="LLC G&G-Telecom" tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png",Победа
-http://195.64.140.147:10141/141
 #EXTINF:-1 group-title="Наш Нет 🇺🇦" tvg-id="nurtv-1b013fd69065447f" tvg-logo="https://iptvx.one/picons/ua-pershy.png", UA:Перший
 https://ext.cdn.nashnet.tv/228.0.2.45/index.m3u8
 #EXTINF:-1 group-title="Наш Нет 🇺🇦" tvg-id="nurtv-d2b616a513fc2964" tvg-logo="https://iptvx.one/picons/ua-kyiv.png", Суспільне Київ
@@ -5657,8 +5653,6 @@ http://hls.stb.md/MATCH_PLANETA_H264/video.m3u8?token=eyJhbGciOiJIUzI1NiIsInR5cC
 http://195.64.140.147:10026/26
 #EXTINF:-1 group-title="LLC G&G-Telecom",Кухня ТВ
 http://195.64.140.147:10037/37
-#EXTINF:-1 group-title="LLC G&G-Telecom",Победа
-http://195.64.140.147:10141/141
 #EXTINF:-1 group-title="Спорт",Матч ТВ
 http://195.64.140.147:10003/993
 #EXTINF:-1 group-title="Спорт",Матч! Арена
