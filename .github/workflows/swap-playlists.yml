@@ -1,0 +1,84 @@
+name: Swap main and candidate playlists safely
+
+on:
+  push:
+    branches:
+      - main
+      - candidate-26-review-2026-11-23
+    paths:
+      - .github/workflows/swap-playlists.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: swap-nur-tv-playlists
+  cancel-in-progress: false
+
+jobs:
+  swap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: candidate-26-review-2026-11-23
+          fetch-depth: 0
+      - name: Prepare both playlist commits and push atomically
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main candidate-26-review-2026-11-23
+          git checkout -B main origin/main
+          git show origin/main:playlist.m3u > /tmp/old-main.m3u
+          git show origin/candidate-26-review-2026-11-23:playlist-test.m3u > /tmp/old-candidate.m3u
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          def records(text):
+              lines=text.splitlines()
+              result=[]
+              i=0
+              while i<len(lines):
+                  if not lines[i].startswith('#EXTINF:'):
+                      i+=1
+                      continue
+                  start=i
+                  i+=1
+                  while i<len(lines) and (not lines[i].strip() or lines[i].startswith('#')):
+                      i+=1
+                  if i<len(lines):
+                      result.append((lines[i].strip(), '\n'.join(lines[start:i+1])))
+                      i+=1
+                  else:
+                      result.append(('', '\n'.join(lines[start:])))
+              return result
+          old_main=Path('/tmp/old-main.m3u').read_text(encoding='utf-8-sig')
+          old_candidate=Path('/tmp/old-candidate.m3u').read_text(encoding='utf-8-sig')
+          a,b=records(old_main),records(old_candidate)
+          urls={u for u,_ in b}
+          missing=[block for u,block in a if u not in urls]
+          missing_urls=[u for u,_ in a if u not in urls]
+          if len(a)!=2540 or len(b)!=31086 or len(missing)!=88 or len(set(missing_urls))!=88:
+              raise SystemExit(f'ABORT: unexpected source counts main={len(a)} candidate={len(b)} missing={len(missing)}')
+          main_text=old_candidate.rstrip()+'\n'+'\n'.join(missing)+'\n'
+          if len(records(main_text))!=31174:
+              raise SystemExit('ABORT: resulting main count is not 31174')
+          Path('/tmp/new-main.m3u').write_text(main_text,encoding='utf-8')
+          Path('/tmp/new-candidate.m3u').write_text(old_main,encoding='utf-8')
+          print('Verified: new main=31174, new candidate=2540, shared missing records=88')
+          PY
+          cp /tmp/new-main.m3u playlist.m3u
+          git add playlist.m3u
+          git commit -m "Promote reviewed candidate playlist to main"
+          MAIN_COMMIT=$(git rev-parse HEAD)
+          git checkout -B candidate-26-review-2026-11-23 origin/candidate-26-review-2026-11-23
+          cp /tmp/new-candidate.m3u playlist-test.m3u
+          git add playlist-test.m3u
+          git commit -m "Archive previous main playlist as candidate test"
+          CANDIDATE_COMMIT=$(git rev-parse HEAD)
+          git push --atomic origin "$MAIN_COMMIT:refs/heads/main" "$CANDIDATE_COMMIT:refs/heads/candidate-26-review-2026-11-23"
+          echo "MAIN_COMMIT=$MAIN_COMMIT"
+          echo "CANDIDATE_COMMIT=$CANDIDATE_COMMIT"
