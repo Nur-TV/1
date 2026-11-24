@@ -37,7 +37,7 @@ jobs:
               "LLC G&G-Telecom",
           }
           food = re.compile(
-              r"(?i)(еда|food|кафе|cafe|café|ресторан|restaurant|"
+              r"(?i)(?<![а-яё])еда(?![а-яё])|food|кафе|cafe|café|ресторан|restaurant|"
               r"кулинари|кухн|рецепт|гастроном|гастро|food\s*network|"
               r"cooking|chef|вкусн|обед|завтрак)"
           )
@@ -74,7 +74,8 @@ jobs:
               group = match.group(1).strip() if match else ""
               if group in targets:
                   # Protect food-related channels even if one appears in a target group.
-                  if food.search(ext):
+                  title = ext.split(",", 1)[1] if "," in ext else ""
+                  if food.search(title):
                       protected[group] += 1
                       kept.append(block)
                   else:
