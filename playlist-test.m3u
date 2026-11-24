@@ -4668,11 +4668,11 @@ https://iptv.itv.uz/hls/live/t/7SVYGm3hBi5z2aCP25CEPQ/e/1795290945/1209/index.m3
 https://iptv.itv.uz/hls/live/t/Laq2jemNlBkTtNHRSKjYyQ/e/1795290975/1499/index.m3u8?ip=45.95.203.252
 #EXTINF:-1 group-title="Узбекистан" tvg-logo="https://iptv.itv.uz/uploads/iptv/channels/2024/04/20//db56b3e322425b29a81ded37a774f83c-q-500x500.jpeg" tvg-id="nurtv-20352079299b71d8", Samarkand
 https://iptv.itv.uz/hls/live/t/ojPsRdcsRK9e9S_Z9sqYUA/e/1795290960/1468/index.m3u8?ip=45.95.203.252
-#EXTINF:-1 group-title="Turon Media (VPN)" tvg-id="nurtv-7a21e74ea4bfbb1d" tvg-logo="https://iptvx.one/picons/kuxnia-tv.png",Кухня ТВ
+#EXTINF:-1 tvg-id="nurtv-7a21e74ea4bfbb1d" tvg-logo="https://iptvx.one/picons/kuxnia-tv.png",Кухня ТВ
 https://stream8.cinerama.uz/1236/tracks-v1a1/mono.m3u8
-#EXTINF:-1 group-title="LLC G&G-Telecom" tvg-id="nurtv-7a21e74ea4bfbb1d" tvg-logo="https://iptvx.one/picons/kuxnia-tv.png",Кухня ТВ
+#EXTINF:-1 tvg-id="nurtv-7a21e74ea4bfbb1d" tvg-logo="https://iptvx.one/picons/kuxnia-tv.png",Кухня ТВ
 http://195.64.140.147:10037/37
-#EXTINF:-1 group-title="LLC G&G-Telecom" tvg-id="nurtv-999848853c632e4f" tvg-logo="https://iptvx.one/picons/telekafe.png",Телекафе
+#EXTINF:-1 tvg-id="nurtv-999848853c632e4f" tvg-logo="https://iptvx.one/picons/telekafe.png",Телекафе
 http://195.64.140.147:10026/26
 #EXTINF:-1 group-title="Наш Нет 🇺🇦" tvg-id="nurtv-1b013fd69065447f" tvg-logo="https://iptvx.one/picons/ua-pershy.png", UA:Перший
 https://ext.cdn.nashnet.tv/228.0.2.45/index.m3u8
@@ -5649,9 +5649,9 @@ http://hls.stb.md/VIASAT_SPORTHD_H264/video.m3u8?token=eyJhbGciOiJIUzI1NiIsInR5c
 http://hls.stb.md/WE_SPORT_H264/video.m3u8?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpcCI6IjEwOS4yMDEuMTUyLjE4MSIsIm5iZiI6MTc5NTQ2MzQ0MywiZXhwIjoxNzk1NTQ5ODQzLCJpYXQiOjE3OTU0NjM0NDMsImlzcyI6InN0Yi5zdGFybmV0Lm1kIn0.nDMYsw6zewvQLj2hB3oPGWUsW8ujl1d67G2mvlVtz2Q
 #EXTINF:-1 group-title="Разное",Матч! Планета
 http://hls.stb.md/MATCH_PLANETA_H264/video.m3u8?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpcCI6IjEwOS4yMDEuMTUyLjE4MSIsIm5iZiI6MTc5NTQ2MzQ0MywiZXhwIjoxNzk1NTQ5ODQzLCJpYXQiOjE3OTU0NjM0NDMsImlzcyI6InN0Yi5zdGFybmV0Lm1kIn0.nDMYsw6zewvQLj2hB3oPGWUsW8ujl1d67G2mvlVtz2Q
-#EXTINF:-1 group-title="LLC G&G-Telecom",Телекафе
+#EXTINF:-1,Телекафе
 http://195.64.140.147:10026/26
-#EXTINF:-1 group-title="LLC G&G-Telecom",Кухня ТВ
+#EXTINF:-1,Кухня ТВ
 http://195.64.140.147:10037/37
 #EXTINF:-1 group-title="Спорт",Матч ТВ
 http://195.64.140.147:10003/993
@@ -6791,7 +6791,7 @@ https://fs.uplink.kz/mma/mono.m3u8?token=onlinetv2
 https://fs.uplink.kz/extreme_sports/mono.m3u8?token=onlinetv2
 #EXTINF:-1 group-title="Спорт",Qazsport HD
 https://fs.uplink.kz/qazsport_hd/mono.m3u8?token=onlinetv2
-#EXTINF:-1 group-title="Turon Media (VPN)",Кухня ТВ
+#EXTINF:-1,Кухня ТВ
 https://stream8.cinerama.uz/1236/tracks-v1a1/mono.m3u8
 #EXTINF:-1 group-title="Спорт",MMA-TV
 https://stream8.cinerama.uz/1226/tracks-v1a1/mono.m3u8
