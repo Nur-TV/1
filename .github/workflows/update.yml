@@ -1,18 +1,181 @@
-name: Update IPTV playlist (temporarily paused)
+name: Update IPTV playlist every 12 hours
 
-# Автоматическая сборка временно отключена.
-# Старый импорт источников нельзя запускать повторно до завершения аудита
-# и замены фильтрации медиатек на проверенную логику.
 on:
+  push:
+    paths:
+      - '.github/workflows/update.yml'
+      - 'tools/build_playlist_preview.py'
+      - 'tools/probe_playlist_preview.py'
+      - 'tools/create_probe_review.py'
   workflow_dispatch:
+  schedule:
+    - cron: "0 3,15 * * *"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: nur-tv-main-playlist-update
+  cancel-in-progress: false
 
 jobs:
-  paused:
-    if: ${{ false }}
+  update-playlist:
     runs-on: ubuntu-latest
+    timeout-minutes: 180
+
     steps:
-      - name: Playlist build is paused
-        run: echo "Playlist publishing is paused until source audit and safe rebuild are complete."
+      - name: Checkout main with full history
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffprobe -version
+
+      # The first run creates a permanent snapshot of the CURRENT main playlist.
+      # It deliberately stops after saving it; no channel is filtered on bootstrap.
+      - name: Create immutable baseline from current main (first run only)
+        id: baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASELINE="backups/playlist-monitoring-baseline-2026-11-24.m3u"
+
+          if [ ! -s "$BASELINE" ]; then
+            COUNT=$(grep -c '^#EXTINF:' playlist.m3u || true)
+            echo "Current main playlist entries: $COUNT"
+            if [ "$COUNT" -lt 30000 ]; then
+              echo "ABORT: current main playlist is unexpectedly small; baseline was not created."
+              exit 1
+            fi
+
+            mkdir -p backups
+            cp playlist.m3u "$BASELINE"
+            BASE_COUNT=$(grep -c '^#EXTINF:' "$BASELINE" || true)
+            if [ "$BASE_COUNT" -ne "$COUNT" ]; then
+              echo "ABORT: baseline copy count mismatch."
+              exit 1
+            fi
+
+            git config user.name "IPTV Bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add "$BASELINE"
+            git commit -m "Preserve current main playlist as monitoring baseline"
+
+            for attempt in 1 2 3; do
+              git fetch origin main
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                echo "Baseline commit conflicted with a newer main commit."
+                exit 1
+              fi
+              if git push origin HEAD:main; then
+                echo "Immutable baseline saved: $BASELINE ($BASE_COUNT entries)."
+                echo "initialized=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "Baseline push attempt $attempt failed; retrying."
+              sleep 5
+            done
+
+            echo "Could not publish the baseline; no playlist update was attempted."
+            exit 1
+          fi
+
+          BASE_COUNT=$(grep -c '^#EXTINF:' "$BASELINE" || true)
+          if [ "$BASE_COUNT" -lt 30000 ]; then
+            echo "ABORT: saved baseline is unexpectedly small ($BASE_COUNT entries)."
+            exit 1
+          fi
+          echo "Saved baseline found: $BASE_COUNT entries."
+          echo "initialized=false" >> "$GITHUB_OUTPUT"
+
+      - name: Restore immutable baseline as build input
+        if: steps.baseline.outputs.initialized != 'true'
+        run: |
+          cp backups/playlist-monitoring-baseline-2026-11-24.m3u playlist.m3u
+          test "$(grep -c '^#EXTINF:' playlist.m3u)" -ge 30000
+
+      - name: Build candidate from the immutable baseline and current sources
+        if: steps.baseline.outputs.initialized != 'true'
+        run: python tools/build_playlist_preview.py
+
+      - name: Probe each unique stream once
+        if: steps.baseline.outputs.initialized != 'true'
+        run: python tools/probe_playlist_preview.py
+
+      - name: Hide only confirmed unavailable streams
+        if: steps.baseline.outputs.initialized != 'true'
+        run: python tools/create_probe_review.py
+
+      - name: Validate result and publish safely
+        if: steps.baseline.outputs.initialized != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASELINE_COUNT=$(grep -c '^#EXTINF:' backups/playlist-monitoring-baseline-2026-11-24.m3u)
+          PREVIEW_COUNT=$(grep -c '^#EXTINF:' playlist-preview.m3u)
+          REVIEW_COUNT=$(grep -c '^#EXTINF:' playlist-review.m3u)
+
+          echo "Baseline: $BASELINE_COUNT"
+          echo "Candidate before probing: $PREVIEW_COUNT"
+          echo "Candidate after conservative probing: $REVIEW_COUNT"
+
+          if [ "$PREVIEW_COUNT" -lt "$BASELINE_COUNT" ]; then
+            echo "ABORT: candidate unexpectedly lost baseline entries before probing."
+            exit 1
+          fi
+          if [ "$REVIEW_COUNT" -lt 1000 ] || [ "$REVIEW_COUNT" -gt "$PREVIEW_COUNT" ]; then
+            echo "ABORT: reviewed playlist count is outside safe limits."
+            exit 1
+          fi
+          if ! head -n 1 playlist-review.m3u | grep -q '^#EXTM3U'; then
+            echo "ABORT: invalid M3U header."
+            exit 1
+          fi
+
+          cp playlist-review.m3u playlist.m3u
+
+          git config user.name "IPTV Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add playlist.m3u
+
+          if git diff --cached --quiet; then
+            echo "No playlist changes; current published playlist is already up to date."
+            exit 0
+          fi
+
+          git commit -m "Check IPTV streams and refresh main playlist"
+
+          # Rebase on the latest main so concurrent EPG/metadata commits are preserved.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Rebase conflict on attempt $attempt; refusing to overwrite newer changes."
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              echo "Updated main playlist published successfully."
+              exit 0
+            fi
+            echo "Publish attempt $attempt failed; retrying."
+            sleep 5
+          done
+
+          echo "Could not publish the updated playlist after 3 attempts."
+          exit 1
