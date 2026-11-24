@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: candidate-26-review-2026-11-23
-      - name: Remove only the requested groups, protecting food channels
+      - name: Put all food and cooking channels into Culinary group
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -28,18 +28,15 @@ jobs:
           source = path.read_text(encoding="utf-8-sig")
           lines = source.splitlines(keepends=True)
 
-          targets = {
-              "Кинозалы 🍿 (VPN)",
-              "Будущее",
-              "Turon Media (VPN)",
-              "Datacamp Limited",
-              "Велком",
-              "LLC G&G-Telecom",
-          }
+          # Match channel names that clearly indicate food, cooking, recipes or cuisine.
           food = re.compile(
-              r"(?i)(?<![а-яё])еда(?![а-яё])|food|кафе|cafe|café|ресторан|restaurant|"
-              r"кулинари|кухн|рецепт|гастроном|гастро|food\s*network|"
-              r"cooking|chef|вкусн|завтрак"
+              r"(?i)(?<![а-яё])еда(?![а-яё])|телекафе|food|"
+              r"кулинари|кухн|готовк|рецепт|гастроном|гастро|"
+              r"cafe|café|кафе|ресторан|restaurant|"
+              r"cooking|cookery|chef|masterchef|gourmet|"
+              r"kitchen|taste|вкус|повар|"
+              r"завтрак|обед|ужин|выпечк|кондитер|"
+              r"bbq|barbecue|grill|baking"
           )
 
           blocks = []
@@ -62,49 +59,42 @@ jobs:
           elif preamble:
               blocks.append(preamble)
 
-          kept = []
-          removed = Counter()
-          protected = Counter()
+          matched = []
+          output_blocks = []
           for block in blocks:
-              ext = next((x for x in block if x.startswith("#EXTINF:")), None)
-              if ext is None:
-                  kept.append(block)
+              ext_index = next((i for i, line in enumerate(block) if line.startswith("#EXTINF:")), None)
+              if ext_index is None:
+                  output_blocks.append(block)
                   continue
-              match = re.search(r'group-title="([^"]*)"', ext, re.I)
-              group = match.group(1).strip() if match else ""
-              if group in targets:
-                  # Protect food-related channels even if one appears in a target group.
-                  title = ext.split(",", 1)[1] if "," in ext else ""
-                  if food.search(title):
-                      protected[group] += 1
-                      # Keep the channel, but remove the category being deleted.
-                      block[block.index(ext)] = re.sub(r'\s+group-title="[^"]*"', '', ext, count=1, flags=re.I)
-                      kept.append(block)
+              ext = block[ext_index]
+              title = ext.split(",", 1)[1].strip() if "," in ext else ""
+              if food.search(title):
+                  # Replace any previous category, or add the new category if absent.
+                  if re.search(r'\s+group-title="[^"]*"', ext, re.I):
+                      ext = re.sub(r'\s+group-title="[^"]*"', ' group-title="Кулинария"', ext, count=1, flags=re.I)
                   else:
-                      removed[group] += 1
-              else:
-                  kept.append(block)
+                      ext = ext.replace("#EXTINF:", '#EXTINF: group-title="Кулинария"', 1)
+                  block[ext_index] = ext
+                  matched.append(title)
+              output_blocks.append(block)
 
-          output = "".join(line for block in kept for line in block)
-          path.write_text(output, encoding="utf-8", newline="")
-
-          remaining = Counter()
-          for block in kept:
-              ext = next((x for x in block if x.startswith("#EXTINF:")), None)
+          path.write_text("".join(line for block in output_blocks for line in block), encoding="utf-8", newline="")
+          print("Food/cooking channels moved to Кулинария:", len(matched))
+          for title in matched:
+              print("CULINARY:", title)
+          groups = Counter()
+          total = 0
+          for block in output_blocks:
+              ext = next((line for line in block if line.startswith("#EXTINF:")), None)
               if ext:
-                  match = re.search(r'group-title="([^"]*)"', ext, re.I)
-                  remaining[match.group(1).strip() if match else "(без группы)"] += 1
-
-          print("Removed:", dict(removed), "total:", sum(removed.values()))
-          print("Food channels protected:", dict(protected), "total:", sum(protected.values()))
-          print("Remaining channels:", sum(remaining.values()))
-          print("Remaining groups:", len(remaining))
-          leftovers = {g: remaining[g] for g in targets if remaining[g]}
-          print("Target-group leftovers (food-protected only expected):", leftovers)
-          assert all(
-              not remaining[g] or remaining[g] == protected[g]
-              for g in targets
-          ), "A requested group still contains unprotected entries"
+                  total += 1
+                  m = re.search(r'group-title="([^"]*)"', ext, re.I)
+                  if m:
+                      groups[m.group(1).strip()] += 1
+          print("Total channels:", total)
+          print("Total groups:", len(groups))
+          print("Кулинария count:", groups["Кулинария"])
+          assert groups["Кулинария"] == len(matched), "Culinary count mismatch"
           PY
       - name: Commit updated test playlist
         run: |
