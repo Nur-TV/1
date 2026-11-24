@@ -23,25 +23,28 @@ jobs:
           from pathlib import Path
           from collections import Counter
           import re
+          import subprocess
 
           path = Path("playlist-test.m3u")
-          source = path.read_text(encoding="utf-8-sig")
+          # Always rebuild from the verified pre-categorization playlist so reruns
+          # cannot preserve accidental matches from an earlier pass.
+          baseline = "6b3ba987413c898d93e23f4ab89d449a6139c91c"
+          source = subprocess.check_output(
+              ["git", "show", f"{baseline}:playlist-test.m3u"], text=True, encoding="utf-8"
+          )
           lines = source.splitlines(keepends=True)
 
-          # Match channel names that clearly indicate food, cooking, recipes or cuisine.
           food = re.compile(
               r"(?i)(?<![а-яё])еда(?![а-яё])|телекафе|food|"
               r"кулинари|кухн|готовк|рецепт|гастроном|гастро|"
-              r"cafe|café|кафе|ресторан|restaurant|"
-              r"cooking|cookery|chef|masterchef|gourmet|"
-              r"kitchen|taste|вкус|повар|"
-              r"завтрак|обед|ужин|выпечк|кондитер|"
-              r"bbq|barbecue|grill|baking"
+              r"cafe|café|cooking|cookery|chef|masterchef|gourmet|"
+              r"kitchen|(?<![а-яё])вкус(?![а-яё])|"
+              r"повар|выпечк|кондитер|bbq|barbecue|grill|baking"
           )
+          # VOD movie/program titles containing words like 'recipe' are not channels.
+          year_in_title = re.compile(r"\(\s*(?:19|20)\d{2}\s*\)")
 
-          blocks = []
-          current = []
-          preamble = []
+          blocks, current, preamble = [], [], []
           for line in lines:
               if line.startswith("#EXTINF:"):
                   if current:
@@ -68,8 +71,7 @@ jobs:
                   continue
               ext = block[ext_index]
               title = ext.split(",", 1)[1].strip() if "," in ext else ""
-              if food.search(title):
-                  # Replace any previous category, or add the new category if absent.
+              if food.search(title) and not year_in_title.search(title):
                   if re.search(r'\s+group-title="[^"]*"', ext, re.I):
                       ext = re.sub(r'\s+group-title="[^"]*"', ' group-title="Кулинария"', ext, count=1, flags=re.I)
                   else:
@@ -79,11 +81,7 @@ jobs:
               output_blocks.append(block)
 
           path.write_text("".join(line for block in output_blocks for line in block), encoding="utf-8", newline="")
-          print("Food/cooking channels moved to Кулинария:", len(matched))
-          for title in matched:
-              print("CULINARY:", title)
-          groups = Counter()
-          total = 0
+          groups, total = Counter(), 0
           for block in output_blocks:
               ext = next((line for line in block if line.startswith("#EXTINF:")), None)
               if ext:
@@ -91,6 +89,9 @@ jobs:
                   m = re.search(r'group-title="([^"]*)"', ext, re.I)
                   if m:
                       groups[m.group(1).strip()] += 1
+          print("Food/cooking channels moved to Кулинария:", len(matched))
+          for title in matched:
+              print("CULINARY:", title)
           print("Total channels:", total)
           print("Total groups:", len(groups))
           print("Кулинария count:", groups["Кулинария"])
