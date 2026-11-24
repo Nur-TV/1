@@ -1,6 +1,7 @@
 name: Swap main and candidate playlists safely
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
