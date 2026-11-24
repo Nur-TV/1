@@ -28,7 +28,7 @@ jobs:
           path = Path("playlist-test.m3u")
           # Always rebuild from the verified pre-categorization playlist so reruns
           # cannot preserve accidental matches from an earlier pass.
-          baseline = "6b3ba987413c898d93e23f4ab89d449a6139c91c"
+          baseline = "3a002d847daf1602cbd8787f5ec4ece67af4946e"
           source = subprocess.check_output(
               ["git", "show", f"{baseline}:playlist-test.m3u"], text=True, encoding="utf-8"
           )
