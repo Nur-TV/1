@@ -39,7 +39,7 @@ jobs:
           food = re.compile(
               r"(?i)(?<![а-яё])еда(?![а-яё])|food|кафе|cafe|café|ресторан|restaurant|"
               r"кулинари|кухн|рецепт|гастроном|гастро|food\s*network|"
-              r"cooking|chef|вкусн|обед|завтрак"
+              r"cooking|chef|вкусн|завтрак"
           )
 
           blocks = []
