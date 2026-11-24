@@ -1,5 +1,8 @@
 name: Update IPTV playlist every 12 hours
 
+# Each scheduled run rebuilds from the immutable snapshot of the current main playlist,
+# so a stream hidden during one check can return automatically when it recovers.
+
 on:
   push:
     paths:
