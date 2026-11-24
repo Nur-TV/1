@@ -77,6 +77,8 @@ jobs:
                   title = ext.split(",", 1)[1] if "," in ext else ""
                   if food.search(title):
                       protected[group] += 1
+                      # Keep the channel, but remove the category being deleted.
+                      block[block.index(ext)] = re.sub(r'\\s+group-title="[^"]*"', '', ext, count=1, flags=re.I)
                       kept.append(block)
                   else:
                       removed[group] += 1
