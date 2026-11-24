@@ -106,7 +106,7 @@ https://stream.ads.ottera.tv/playlist.m3u8?network_id=4158
 http://stitch.teletarget.ru/vintera/movieseason/index.m3u8
 #EXTINF:-1 tvg-id="nurtv-c1fb95d9a5d5e298" tvg-logo="https://iptvx.one/picons/hollywood-hd.png" group-title="Кино и сериалы",HollywooD HD
 https://stream8.cinerama.uz/1443/index.m3u8
-#EXTINF:-1 tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png" group-title="Кулинария",Победа
+#EXTINF:-1 tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png" group-title="Разное",Победа
 https://streaming.thestream.cyou/live/43.m3u8
 #EXTINF:-1 tvg-id="nurtv-181ad7d592748a4f" tvg-logo="https://iptvx.one/picons/kino-tv.png" group-title="Кино и сериалы",Кино ТВ
 http://vod.tuva.ru/kinotv/tracks-v1a1/mono.m3u8
@@ -2924,7 +2924,7 @@ http://tv.ttk.mx:9162
 http://tv.ttk.mx:9099
 #EXTINF:-1 group-title="Разное" tvg-id="nurtv-231f09f4930b9021" tvg-logo="https://iptvx.one/picons/sts-love.png",СТС Love
 http://tv.ttk.mx:9104
-#EXTINF:-1 group-title="Кулинария" tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png",Победа
+#EXTINF:-1 group-title="Разное" tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png",Победа
 http://tv.ttk.mx:9149
 #EXTINF:-1 group-title="Разное" tvg-id="nurtv-a3e2a57e5b49d1e7" tvg-logo="https://iptvx.one/picons/krasnaya-linia.png",Красная линия
 http://tv.ttk.mx:9102
@@ -3420,7 +3420,7 @@ https://streaming.thestream.cyou/live/30-req_offset_28000000-req_window_0-1k_v5.
 https://streaming.thestream.cyou/live/213-req_offset_28000000-req_window_0-1k_v5.m3u8
 #EXTINF:-1 group-title="Разное" tvg-id="nurtv-db33505b54bfdb50" tvg-logo="http://epg.one/img/2547.png",Россия РТР
 https://streaming.thestream.cyou/live/211-req_offset_28000000-req_window_0-1k_v5.m3u8
-#EXTINF:-1 group-title="Кулинария" tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png",Победа
+#EXTINF:-1 group-title="Разное" tvg-id="nurtv-f968dc39a93340e2" tvg-logo="https://iptvx.one/picons/pobeda.png",Победа
 https://streaming.thestream.cyou/live/43-req_offset_28000000-req_window_0-1k_v5.m3u8
 #EXTINF:-1 group-title="Разное" tvg-id="nurtv-4f37d8f0491569eb" tvg-logo="https://epg.iptvx.one/picons/sts.png",СТС
 https://streaming.thestream.cyou/live/296-req_offset_28000000-req_window_0-1k_v5.m3u8
@@ -5059,7 +5059,7 @@ http://tv.ttk.mx:9169
 http://stitch.teletarget.ru/vintera/sovietmovie/index.m3u8
 #EXTINF:-1 group-title="Кино и сериалы",Киносат
 https://flussonic.mkpnet.ru/tv-e055808223a74709/video.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 https://fs.uplink.kz/pobeda/mono.m3u8?token=onlinetv2
 #EXTINF:-1 group-title="Кино и сериалы",Русский Иллюзион
 http://185.46.16.239:8000/Russkiy_Illyuzion
@@ -6981,7 +6981,7 @@ http://tv.ttk.mx:9099
 http://tv.ttk.mx:9102
 #EXTINF:-1 group-title="Разное",СТС Love
 http://tv.ttk.mx:9104
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://tv.ttk.mx:9149
 #EXTINF:-1 group-title="Разное",Кинопоказ
 http://tv.ttk.mx:9150
@@ -8257,7 +8257,7 @@ https://streaming.televizor-24-tochka.ru/live/14-req_offset_28000000-req_window_
 #EXTINF:-1 group-title="Разное",ОТР
 #EXTVLCOPT:http-referrer=https://televizor24tochka.ru/
 https://streaming.televizor-24-tochka.ru/live/12-req_offset_28000000-req_window_0-1k_v5.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 #EXTVLCOPT:http-referrer=https://televizor24tochka.ru/
 https://streaming.thestream.cyou/live/43-req_offset_28000000-req_window_0-1k_v5.m3u8
 #EXTINF:-1 group-title="Разное",Пятый канал
@@ -18271,11 +18271,11 @@ http://185.121.1.163:8083/Mosfilm/index.m3u8
 http://178.134.1.158:8081/mosfilm/index.m3u8
 #EXTINF:-1 group-title="Разное",Мосфильм.Золотая Коллекция (+2)
 http://83.217.12.157:81/udp/239.1.1.206:1234
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 https://streaming.thestream.cyou/live/43.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа FD
+#EXTINF:-1 group-title="Разное",Победа FD
 https://streaming.thestream.cyou/live/43-req_offset_28000000-req_window_0-1k_v5.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа FD
+#EXTINF:-1 group-title="Разное",Победа FD
 https://streaming.televizor-24-tochka.ru/live/43.m3u8
 #EXTINF:-1 group-title="Разное",Русский Иллюзион
 http://185.46.16.239:8000/Russkiy_Illyuzion
@@ -24735,7 +24735,7 @@ https://fs.uplink.kz/nostalgia/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 https://fs.uplink.kz/oruzhie/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное",Перец
 https://fs.uplink.kz/perec/tracks-v1a1/mono.ts.m3u8?token=onlinetv
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 https://fs.uplink.kz/pobeda/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное",Поехали!
 https://fs.uplink.kz/poehali/tracks-v1a1/mono.ts.m3u8?token=onlinetv
@@ -24813,7 +24813,7 @@ http://fs.uplink.kz/multilandia/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 http://fs.uplink.kz/oruzhie/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное",Перец
 http://fs.uplink.kz/perec/tracks-v1a1/mono.ts.m3u8?token=onlinetv
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://fs.uplink.kz/pobeda/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное",Поехали!
 http://fs.uplink.kz/poehali/tracks-v1a1/mono.ts.m3u8?token=onlinetv
@@ -24951,7 +24951,7 @@ https://fs.uplink.kz/novoe_tv/mono.m3u8?token=onlinetv
 https://fs.uplink.kz/oruzhie/mono.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное",Перец
 https://fs.uplink.kz/perec/mono.m3u8?token=onlinetv
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 https://fs.uplink.kz/pobeda/mono.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное",Русский иллюзион
 https://fs.uplink.kz/russkiy_illusion/mono.m3u8?token=onlinetv
@@ -25997,7 +25997,7 @@ http://195.64.140.147:10118/118
 http://195.64.140.147:10138/138
 #EXTINF:-1 group-title="Разное",СТС Love
 http://195.64.140.147:10140/140
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://195.64.140.147:10141/141
 #EXTINF:-1 group-title="Разное",Продвижение
 http://195.64.140.147:10142/142
@@ -26395,9 +26395,9 @@ http://iptv.mega.net.ru:8888/Amedia_Premium_HD/index.m3u8
 http://iptv.mega.net.ru:8888/Bollywood_HD/index.m3u8
 #EXTINF:-1 group-title="Разное",Viju TV1000 русское
 http://iptv.mega.net.ru:8888/TV1000_Russkoe_kino/index.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://iptv.mega.net.ru:8888/Pobeda/index.m3u8
-#EXTINF:-1 group-title="Кулинария",День Победы
+#EXTINF:-1 group-title="Разное",День Победы
 http://iptv.mega.net.ru:8888/Den_pobedy_hd/index.m3u8
 #EXTINF:-1 group-title="Разное",Дом Кино
 http://iptv.mega.net.ru:8888/Dom_kino/index.m3u8
@@ -33473,9 +33473,9 @@ http://fs.uplink.kz/perec/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 http://87.252.229.200:8083/pinsk
 #EXTINF:-1 group-title="Разное" tvg-logo="" tvg-id="",Плюс Минус 16
 http://media.16pm.ru/live/tracks-v1a1/mono.ts.m3u8
-#EXTINF:-1 group-title="Кулинария" tvg-logo="" tvg-id="",Победа
+#EXTINF:-1 group-title="Разное" tvg-logo="" tvg-id="",Победа
 https://streaming.thestream.cyou/live/43-req_offset_28000000-req_window_0-1k_v5.m3u8
-#EXTINF:-1 group-title="Кулинария" tvg-logo="" tvg-id="",Победа (5)
+#EXTINF:-1 group-title="Разное" tvg-logo="" tvg-id="",Победа (5)
 http://fs.uplink.kz/pobeda/tracks-v1a1/mono.ts.m3u8?token=onlinetv
 #EXTINF:-1 group-title="Разное" tvg-logo="" tvg-id="",Поехали! (5)
 http://fs.uplink.kz/poehali/tracks-v1a1/mono.ts.m3u8?token=onlinetv
@@ -35809,7 +35809,7 @@ http://de1.plist.link:3355/FGfpnUmovVu7372/index.m3u8?token=8AqJ8y_ch5_3l2pEaM-d
 http://de1.plist.link:3355/FGfpnUmovVu2395/index.m3u8?token=8AqJ8y_ch5_3l2pEaM-dPzz8ZvwUpe-3f7ZW0nXXe0BEvy-ocB-bIRgEsGu23Pi1.tg6457680141
 #EXTINF:0 tvg-id="chnl-2810" tvg-name="Пятый канал +7" tvg-logo="http://de1.plist.link/plepg/img/channels/2810.png?69c29495b9dac" tvg-rec="0" timeshift="0" group-title="Разное", Пятый канал +7
 http://de1.plist.link:3355/FGfpnUmovVu22810/index.m3u8?token=8AqJ8y_ch5_3l2pEaM-dP9Vv6mMzm8W-zMNMFWFG_95q7cgfuE2Tm7cjiQU3h1MM.tg6457680141
-#EXTINF:0 tvg-id="chnl-66" tvg-name="Победа HD" tvg-logo="http://de1.plist.link/plepg/img/channels/66.png?69c29495b9dac" tvg-rec="3" timeshift="3" group-title="Кулинария", Победа HD
+#EXTINF:0 tvg-id="chnl-66" tvg-name="Победа HD" tvg-logo="http://de1.plist.link/plepg/img/channels/66.png?69c29495b9dac" tvg-rec="3" timeshift="3" group-title="Разное", Победа HD
 http://de1.plist.link:3355/FGfpnUmovVu9066/index.m3u8?token=8AqJ8y_ch5_3l2pEaM-dP3H5AJQ95OdxcK6bSoLpOmB4vrCGo_UJ1fRnb2NAVKIj.tg6457680141
 #EXTINF:0 tvg-id="chnl-21" tvg-name="СТС HD" tvg-logo="http://de1.plist.link/plepg/img/channels/21.png?69c29495b9dac" tvg-rec="3" timeshift="3" group-title="Разное", СТС HD
 http://de1.plist.link:3355/FGfpnUmovVu6021/index.m3u8?token=8AqJ8y_ch5_3l2pEaM-dP-c5goHA1AbcefRMyWg_ZhEqG_TAqmWbRusFu3zd_7Ao.tg6457680141
@@ -36263,7 +36263,7 @@ http://176.118.197.101/LubimoeKino/index.m3u8
 http://176.118.197.101/Nostalgiya/mono.m3u8
 #EXTINF:-1 group-title="Кино и сериалы",Про любовь HD
 http://hls127.freeott.top:8080/ProLubovHD/mono.m3u8
-#EXTINF:-1 group-title="Кулинария",День победы HD
+#EXTINF:-1 group-title="Разное",День победы HD
 http://stream-tv-digital.hf.space/channel/907.m3u8
 #EXTINF:-1 group-title="Кино и сериалы",Кино 1 INT
 http://stream-tv-digital.hf.space/channel/883.m3u8
@@ -37603,7 +37603,7 @@ http://cdntv.online/high/kf28bzwndi/340.m3u8
 http://cdntv.online/high/kf28bzwndi/343.m3u8
 #EXTINF:0 tvg-id="345" tvg-logo="http://epg.cdntv.online/img/345.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Познавательные", Первый вегетарианский HD
 http://cdntv.online/high/kf28bzwndi/345.m3u8
-#EXTINF:0 tvg-id="346" tvg-logo="http://epg.cdntv.online/img/346.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Кулинария", Победа
+#EXTINF:0 tvg-id="346" tvg-logo="http://epg.cdntv.online/img/346.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Разное", Победа
 http://cdntv.online/high/kf28bzwndi/346.m3u8
 #EXTINF:0 tvg-id="347" tvg-logo="http://epg.cdntv.online/img/347.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Познавательные", Приключения HD
 http://cdntv.online/high/kf28bzwndi/347.m3u8
@@ -37643,7 +37643,7 @@ http://cdntv.online/high/kf28bzwndi/374.m3u8
 http://cdntv.online/high/kf28bzwndi/375.m3u8
 #EXTINF:0 tvg-id="378" tvg-logo="http://epg.cdntv.online/img/378.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Познавательные", Моя Планета HD
 http://cdntv.online/high/kf28bzwndi/378.m3u8
-#EXTINF:0 tvg-id="379" tvg-logo="http://epg.cdntv.online/img/379.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Кулинария", Победа HD
+#EXTINF:0 tvg-id="379" tvg-logo="http://epg.cdntv.online/img/379.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Разное", Победа HD
 http://cdntv.online/high/kf28bzwndi/379.m3u8
 #EXTINF:0 tvg-id="381" tvg-logo="http://epg.cdntv.online/img/381.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Спорт", UDAR HD
 http://cdntv.online/high/kf28bzwndi/381.m3u8
@@ -38129,7 +38129,7 @@ http://cdntv.online/high/kf28bzwndi/904.m3u8
 http://cdntv.online/high/kf28bzwndi/905.m3u8
 #EXTINF:0 tvg-id="906" tvg-logo="http://epg.cdntv.online/img/906.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Кино и сериалы", Комедийное HD
 http://cdntv.online/high/kf28bzwndi/906.m3u8
-#EXTINF:0 tvg-id="907" tvg-logo="http://epg.cdntv.online/img/907.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Кулинария", День победы HD
+#EXTINF:0 tvg-id="907" tvg-logo="http://epg.cdntv.online/img/907.png" catchup="shift" catchup-days="3" timeshift="3" group-title="Разное", День победы HD
 http://cdntv.online/high/kf28bzwndi/907.m3u8
 #EXTINF:0 tvg-id="908" tvg-logo="http://epg.cdntv.online/img/908.png" group-title="Разное", Allgäu TV
 http://cdntv.online/high/kf28bzwndi/908.m3u8
@@ -39821,7 +39821,7 @@ https://v2.catcast.tv/content/34114/index.m3u8
 https://tv.a21network.ru/content/40650/index.m3u8
 #EXTINF:-1 group-title="Разное",ԼԱՅՄ GOLD TV
 https://v2.catcast.tv/content/40546/index.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://193.25.8.59:8000/tochka
 #EXTINF:-1 group-title="Разное",Первый канал
 http://178.163.121.127:4022/udp/234.0.0.200:2000
@@ -51826,7 +51826,7 @@ http://95.66.188.74/Nostalgia/mono.m3u8
 http://95.66.188.74/O2TV/mono.m3u8
 #EXTINF:-1 group-title="Мужские", Оружие
 http://95.66.188.74/Oruzhie/mono.m3u8
-#EXTINF:-1 group-title="Кулинария", Победа
+#EXTINF:-1 group-title="Разное", Победа
 http://95.66.188.74/Pobeda/mono.m3u8
 #EXTINF:-1 group-title="Развлекательные", Пятница
 http://95.66.188.74/Pyatnica/mono.m3u8
@@ -53487,9 +53487,9 @@ http://158.101.222.193:88/georgia_play.php?id=perec
 http://sirius.greenhosting.ru/PingvinRu/tracks-v1a1/mono.m3u8
 #EXTINF:-1 group-title="Эфирные",Плюс Минус 16
 http://media.16pm.ru/live/tracks-v1a1/mono.ts.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://178.212.71.253:8000/play/129/index.m3u8
-#EXTINF:-1 group-title="Кулинария",Победа
+#EXTINF:-1 group-title="Разное",Победа
 http://95.66.188.74/Pobeda/mono.m3u8
 #EXTINF:-1 group-title="Эфирные",Поехали!
 http://95.66.188.74/Poehali/index.m3u8
@@ -54869,9 +54869,9 @@ http://video1.getstreamhosting.com:1935/8226/8226/playlist.m3u8
 http://tv.ctvcamau.vn/live/tv/tv.m3u8
 #EXTINF:-1 group-title="Индия",CYC TV
 https://5d12bc59c4748.streamlock.net/cycnow.com/cyc.smil/chunklist.m3u8
-#EXTINF:-1 group-title="Кулинария",CafeTV24
+#EXTINF:-1 group-title="Разное",CafeTV24
 https://srvx1.selftv.video/cafe/smil:live/playlist.m3u8
-#EXTINF:-1 group-title="Кулинария",Cafe Trade TV
+#EXTINF:-1 group-title="Разное",Cafe Trade TV
 https://cafetradehls.wns.live/hls/stream.m3u8
 #EXTINF:-1 group-title="Разное",Canada One
 http://cdn8.live247stream.com/canadaone/tv/playlist.m3u8
@@ -56225,7 +56225,7 @@ http://stream.polar.cz:1935/polar/polarlive-1/playlist.m3u8
 http://45.87.35.12:7032/stream
 #EXTINF:-1 group-title="Разное",Polonia 1
 http://45.87.35.12:7123/stream
-#EXTINF:-1 group-title="Кулинария",Polsat Cafe
+#EXTINF:-1 group-title="Разное",Polsat Cafe
 http://45.87.35.12:7057/stream
 #EXTINF:-1 group-title="Разное",Polsat Film
 http://45.87.35.12:7051/stream
@@ -65259,7 +65259,7 @@ https://m.cdntv.online/f/3z2tyixwanvb/Knockin_On_Heavens_Door_1997.m3u8
 https://m.cdntv.online/f/3z2tyixwanvb/Leon_1994.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Avatar.jpg" group-title="Разное", Аватар (2009)
 https://m.cdntv.online/f/3z2tyixwanvb/Avatar_2009.m3u8
-#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Piraty1.jpg" group-title="Кулинария", Пираты Карибского моря: Проклятие Чёрной жемчужины (2003)
+#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Piraty1.jpg" group-title="Разное", Пираты Карибского моря: Проклятие Чёрной жемчужины (2003)
 https://m.cdntv.online/f/3z2tyixwanvb/Pirates_of_the_Caribbean_The_Curse_of_the_Black_Pearl_2003.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Piraty2.jpg" group-title="Разное", Пираты Карибского моря: Сундук мертвеца (2006)
 https://m.cdntv.online/f/3z2tyixwanvb/Pirates_of_the_Caribbean_Dead_Mans_Chest_2006.m3u8
@@ -65693,7 +65693,7 @@ https://m.cdntv.online/f/3z2tyixwanvb/AngelyLadogy.m3u8
 https://m.cdntv.online/f/3z2tyixwanvb/Michael.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/StaroeRuzhye.jpg" group-title="Познавательные", Старое ружьё (1975)
 https://m.cdntv.online/f/3z2tyixwanvb/StaroeRuzhye.m3u8
-#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/TheDinner.jpg" group-title="Кулинария", Ужин (2025)
+#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/TheDinner.jpg" group-title="Разное", Ужин (2025)
 https://m.cdntv.online/f/3z2tyixwanvb/TheDinner.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/SoulonFire.jpg" group-title="Познавательные", Пламя души (2025)
 https://m.cdntv.online/f/3z2tyixwanvb/SoulonFire.m3u8
@@ -65917,7 +65917,7 @@ https://m.cdntv.online/f/3z2tyixwanvb/SaturdayNight.m3u8
 https://m.cdntv.online/f/3z2tyixwanvb/Babes2024.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/BeetlejuiceBeetlejuice.jpg" group-title="Разное",  Битлджус Битлджус (2024).
 https://m.cdntv.online/f/3z2tyixwanvb/BeetlejuiceBeetlejuice.m3u8
-#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/TheTasteofThings.jpg" group-title="Кулинария", Рецепт любви (2023).
+#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/TheTasteofThings.jpg" group-title="Разное", Рецепт любви (2023).
 https://m.cdntv.online/f/3z2tyixwanvb/TheTasteofThings.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/TheBothersomeMan.jpg" group-title="Разное", Неуместный человек (2006).
 https://m.cdntv.online/f/3z2tyixwanvb/TheBothersomeMan.m3u8
@@ -65927,7 +65927,7 @@ https://m.cdntv.online/f/3z2tyixwanvb/MiraclesoftheNamiyaGeneralStore.m3u8
 https://m.cdntv.online/f/3z2tyixwanvb/Tuesday.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/HaroldandthePurpleCrayon.jpg" group-title="Разное", Гарольд и волшебный мелок (2024)
 https://m.cdntv.online/f/3z2tyixwanvb/HaroldandthePurpleCrayon.m3u8
-#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Delicious.jpg" group-title="Кулинария", Восхитительно! / Вкуснятина (2025).
+#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Delicious.jpg" group-title="Разное", Восхитительно! / Вкуснятина (2025).
 https://m.cdntv.online/f/3z2tyixwanvb/Delicious.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/Bolero.jpg" group-title="Познавательные", Болеро. Душа Парижа (2024)
 https://m.cdntv.online/f/3z2tyixwanvb/Bolero.m3u8
@@ -66349,7 +66349,7 @@ https://m.cdntv.online/f/3z2tyixwanvb/Qinglongyanyuedao.m3u8
 https://m.cdntv.online/f/3z2tyixwanvb/KnightsoftheZodiac.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/DeathBecomesHer.jpg" group-title="Разное", Смерть ей к лицу (1992)..
 https://m.cdntv.online/f/3z2tyixwanvb/DeathBecomesHer.m3u8
-#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/SolncenaVkus.jpg" group-title="Кулинария", Солнце на вкус (2022)..
+#EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/SolncenaVkus.jpg" group-title="Разное", Солнце на вкус (2022)..
 https://m.cdntv.online/f/3z2tyixwanvb/SolncenaVkus.m3u8
 #EXTINF:-1 tvg-logo="https://m.cdntv.online/tvg-logo/3z2tyixwanvb/LestroismousquetairesDArtagnan.jpg" group-title="Познавательные", Три мушкетера: Д’Артаньян (2023)..
 https://m.cdntv.online/f/3z2tyixwanvb/LestroismousquetairesDArtagnan.m3u8
@@ -67707,7 +67707,7 @@ https://kinoleha.net/load/serdce-stoun?original
 http://ashdi.vip/video22/2/new/treasure.2024.1080p.amzn.webdl.ddp5.1.h.264byndrmvorgb_142314/hls/BKiBlHWKkftdmgjhA44=/index.m3u8
 #EXTINF:-1 tvg-id="simpleTVFakeEpgId" tvg-logo="https://suzustv.clan.su/Logo/mediateka.png" group-title="Кино и сериалы",Скеллі(2024)
 http://ashdi.vip/video24/1/new/skelly_131550/hls/BKiBlHWKkftdmgjhA44=/index.m3u8
-#EXTINF:-1 tvg-id="simpleTVFakeEpgId" tvg-logo="https://suzustv.clan.su/Logo/mediateka.png" group-title="Кулинария",Смертельний клуб дружин(2024)
+#EXTINF:-1 tvg-id="simpleTVFakeEpgId" tvg-logo="https://suzustv.clan.su/Logo/mediateka.png" group-title="Разное",Смертельний клуб дружин(2024)
 http://ashdi.vip/video21/1/new/deadly_wives_club_2024_amzn_webdl_1080p_ukr_eng_hurtom_159380/hls/DK6Xi36KjuxVhA75AA==/index.m3u8
 #EXTINF:-1 tvg-id="simpleTVFakeEpgId" tvg-logo="https://suzustv.clan.su/Logo/mediateka.png" group-title="Кино и сериалы",Снігова сестричка(2024)
 http://ashdi.vip/video15/1/new/the.snow.sister.2024.ua_153487/hls/BKeMlHaNkPtdngjhBIw=/index.m3u8
