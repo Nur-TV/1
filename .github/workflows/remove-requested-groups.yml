@@ -1,0 +1,112 @@
+name: Remove requested groups from test playlist
+
+on:
+  push:
+    branches:
+      - candidate-26-review-2026-11-23
+    paths:
+      - .github/workflows/remove-requested-groups.yml
+
+permissions:
+  contents: write
+
+jobs:
+  remove-groups:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: candidate-26-review-2026-11-23
+      - name: Remove only the requested groups, protecting food channels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import re
+
+          path = Path("playlist-test.m3u")
+          source = path.read_text(encoding="utf-8-sig")
+          lines = source.splitlines(keepends=True)
+
+          targets = {
+              "Кинозалы 🍿 (VPN)",
+              "Будущее",
+              "Turon Media (VPN)",
+              "Datacamp Limited",
+              "Велком",
+              "LLC G&G-Telecom",
+          }
+          food = re.compile(
+              r"(?i)(еда|food|кафе|cafe|café|ресторан|restaurant|"
+              r"кулинари|кухн|рецепт|гастроном|гастро|food\s*network|"
+              r"cooking|chef|вкусн|обед|завтрак)"
+          )
+
+          blocks = []
+          current = []
+          preamble = []
+          for line in lines:
+              if line.startswith("#EXTINF:"):
+                  if current:
+                      blocks.append(current)
+                  elif preamble:
+                      blocks.append(preamble)
+                      preamble = []
+                  current = [line]
+              elif current:
+                  current.append(line)
+              else:
+                  preamble.append(line)
+          if current:
+              blocks.append(current)
+          elif preamble:
+              blocks.append(preamble)
+
+          kept = []
+          removed = Counter()
+          protected = Counter()
+          for block in blocks:
+              ext = next((x for x in block if x.startswith("#EXTINF:")), None)
+              if ext is None:
+                  kept.append(block)
+                  continue
+              match = re.search(r'group-title="([^"]*)"', ext, re.I)
+              group = match.group(1).strip() if match else ""
+              if group in targets:
+                  # Protect food-related channels even if one appears in a target group.
+                  if food.search(ext):
+                      protected[group] += 1
+                      kept.append(block)
+                  else:
+                      removed[group] += 1
+              else:
+                  kept.append(block)
+
+          output = "".join(line for block in kept for line in block)
+          path.write_text(output, encoding="utf-8", newline="")
+
+          remaining = Counter()
+          for block in kept:
+              ext = next((x for x in block if x.startswith("#EXTINF:")), None)
+              if ext:
+                  match = re.search(r'group-title="([^"]*)"', ext, re.I)
+                  remaining[match.group(1).strip() if match else "(без группы)"] += 1
+
+          print("Removed:", dict(removed), "total:", sum(removed.values()))
+          print("Food channels protected:", dict(protected), "total:", sum(protected.values()))
+          print("Remaining channels:", sum(remaining.values()))
+          print("Remaining groups:", len(remaining))
+          leftovers = {g: remaining[g] for g in targets if remaining[g]}
+          print("Target-group leftovers (food-protected only expected):", leftovers)
+          assert all(
+              not remaining[g] or remaining[g] == protected[g]
+              for g in targets
+          ), "A requested group still contains unprotected entries"
+          PY
+      - name: Commit updated test playlist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist-test.m3u
+          git commit -m "Remove requested groups from test playlist"
+          git push origin candidate-26-review-2026-11-23
