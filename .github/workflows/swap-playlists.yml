@@ -1,8 +1,10 @@
 name: Swap main and candidate playlists safely
 
 on:
+  workflow_dispatch:
   push:
     branches:
+      - main
       - candidate-26-review-2026-11-23
     paths:
       - .github/workflows/swap-playlists.yml
